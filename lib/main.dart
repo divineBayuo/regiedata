@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:regie_data/screens/splashscreen.dart';
 
 void main() {
   runApp(const MyApp());
@@ -10,8 +11,8 @@ class MyApp extends StatelessWidget {
   // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Regie',
+    return const MaterialApp(
+      /* title: 'Regie',
       theme: ThemeData(
         // This is the theme of your application.
         //
@@ -30,13 +31,14 @@ class MyApp extends StatelessWidget {
         // tested with just a hot reload.
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
         useMaterial3: true,
-      ),
-      home: const MyHomePage(title: 'Regie'),
+      ), */
+      debugShowCheckedModeBanner: false,
+      home: /* const MyHomePage(title: 'Regie') */ Splashscreen(),
     );
   }
 }
 
-class MyHomePage extends StatefulWidget {
+/* class MyHomePage extends StatefulWidget {
   const MyHomePage({super.key, required this.title});
 
   // This widget is the home page of your application. It is stateful, meaning
@@ -123,3 +125,4 @@ class _MyHomePageState extends State<MyHomePage> {
     );
   }
 }
+ */
