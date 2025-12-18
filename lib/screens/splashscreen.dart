@@ -4,7 +4,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:regie_data/screens/homescreen.dart';
 import 'package:regie_data/screens/onboardingscreen.dart';
-import 'package:regie_data/screens/signinpage.dart';
+import 'package:regie_data/screens/Signinpage.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class Splashscreen extends StatefulWidget {
@@ -24,7 +24,7 @@ class _SplashscreenState extends State<Splashscreen> {
   Future<void> _checkFirstTime() async {
     final prefs = await SharedPreferences.getInstance();
     final isFirstTime = prefs.getBool('first_time') ?? true;
-    await Future.delayed(const Duration(seconds: 3));
+    await Future.delayed(const Duration(seconds: 5));
 
     if (!mounted) return;
 
