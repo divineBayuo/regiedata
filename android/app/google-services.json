@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "674155089068",
+    "project_id": "regie-4c78a",
+    "storage_bucket": "regie-4c78a.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:674155089068:android:af23dc49b021b2bae1a309",
+        "android_client_info": {
+          "package_name": "com.example.regie_data"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDHMH7mXUgkfrlNRzKp8lxXc_cA66oy6D8"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

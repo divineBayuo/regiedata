@@ -89,6 +89,7 @@ flutter:
     - assets/onboarding_getthingsdone.json
     - assets/onboarding_tracking.json
     - assets/onboarding_analysis.json
+    - assets/icon/google_logo.png
   #   - images/a_dot_ham.jpeg
 
   # An image asset can refer to one or more resolution-specific "variants", see
