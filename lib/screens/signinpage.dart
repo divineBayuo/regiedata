@@ -169,7 +169,7 @@ class _SigninpageState extends State<Signinpage> {
                         focusedBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
                           borderSide: const BorderSide(
-                              color: Colors.pinkAccent, width: 2),
+                              color: Colors.green, width: 2),
                         ),
                       ),
                       keyboardType: TextInputType.emailAddress,
@@ -222,7 +222,7 @@ class _SigninpageState extends State<Signinpage> {
                         Row(
                           children: [
                             Checkbox(
-                              activeColor: Colors.pinkAccent,
+                              activeColor: Colors.green,
                               value: _rememberMe,
                               onChanged: (value) {
                                 setState(() => _rememberMe = value ?? false);
@@ -231,7 +231,7 @@ class _SigninpageState extends State<Signinpage> {
                             const Text("Remember Me",
                                 style: TextStyle(
                                     fontSize: 14,
-                                    fontWeight: FontWeight.bold,
+                                    fontWeight: FontWeight.normal,
                                     color: Colors.grey)),
                           ],
                         ),
@@ -313,7 +313,7 @@ class _SigninpageState extends State<Signinpage> {
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            Image.asset('assets/google_logo.png',
+                            Image.asset('assets/icon/google_logo.png',
                                 height: 40, width: 40),
                             const SizedBox(width: 12),
                             Flexible(
@@ -336,7 +336,7 @@ class _SigninpageState extends State<Signinpage> {
                         Text('Don\'t have an account?',
                             style: TextStyle(color: Colors.grey.shade700)),
                         TextButton(
-                            onPressed: () => Navigator.pushReplacement(
+                            onPressed: () => Navigator.push(
                                 context,
                                 MaterialPageRoute(
                                     builder: (context) =>
