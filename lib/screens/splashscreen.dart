@@ -2,9 +2,9 @@ import 'dart:async';
 
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:regie_data/screens/homescreen.dart';
 import 'package:regie_data/screens/onboardingscreen.dart';
 import 'package:regie_data/screens/Signinpage.dart';
+import 'package:regie_data/screens/user_home_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class Splashscreen extends StatefulWidget {
@@ -40,7 +40,7 @@ class _SplashscreenState extends State<Splashscreen> {
         context,
         MaterialPageRoute(
             builder: (_) =>
-                user != null ? const Homescreen() : const Signinpage()));
+                user != null ? const UserHomeScreen() : const Signinpage()));
   }
 
   @override
