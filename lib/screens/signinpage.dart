@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
-import 'package:regie_data/screens/homescreen.dart';
 import 'package:regie_data/screens/signuppage.dart';
+import 'package:regie_data/screens/user_home_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class Signinpage extends StatefulWidget {
@@ -66,7 +66,7 @@ class _SigninpageState extends State<Signinpage> {
       await _saveCredentials();
       if (!mounted) return;
       Navigator.pushReplacement(
-          context, MaterialPageRoute(builder: (context) => const Homescreen()));
+          context, MaterialPageRoute(builder: (context) => const UserHomeScreen()));
     } on FirebaseAuthException catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context)
@@ -99,7 +99,7 @@ class _SigninpageState extends State<Signinpage> {
 
       if (!mounted) return;
       Navigator.pushReplacement(
-          context, MaterialPageRoute(builder: (context) => const Homescreen()));
+          context, MaterialPageRoute(builder: (context) => const UserHomeScreen()));
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
