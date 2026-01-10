@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:regie_data/helper_functions/role_navigation.dart';
 import 'package:regie_data/screens/onboardingscreen.dart';
 import 'package:regie_data/screens/Signinpage.dart';
 import 'package:regie_data/screens/user_home_screen.dart';
@@ -36,11 +37,17 @@ class _SplashscreenState extends State<Splashscreen> {
 
     final user = FirebaseAuth.instance.currentUser;
 
-    Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(
-            builder: (_) =>
-                user != null ? const UserHomeScreen() : const Signinpage()));
+    if (user != null) {
+      // user is logged in, navigate based on role
+      navigateBasedOnRole(context);
+    } else {
+      // no user logged in, navigate to signin page
+      Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+              builder: (_) =>
+                  user != null ? const UserHomeScreen() : const Signinpage()));
+    }
   }
 
   @override
