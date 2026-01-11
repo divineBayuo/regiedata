@@ -55,7 +55,7 @@ class _SplashscreenState extends State<Splashscreen> {
     return const Scaffold(
       backgroundColor: Colors.white,
       body: Center(
-        child: CircularProgressIndicator(),
+        child: CircularProgressIndicator(color: Colors.green),
       ),
     );
   }

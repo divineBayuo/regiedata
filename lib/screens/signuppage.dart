@@ -1,5 +1,7 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/services.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:regie_data/screens/signinpage.dart';
 import 'package:regie_data/screens/user_home_screen.dart';
@@ -30,6 +32,9 @@ class _SignuppageState extends State<Signuppage> {
   final TextEditingController _residenceController = TextEditingController();
 
   // Work/School information
+  bool isWorking = false;
+  bool isSchooling = false;
+  final TextEditingController _occupationController = TextEditingController();
   final TextEditingController _placeofworkController = TextEditingController();
   final TextEditingController _placeofschoolController =
       TextEditingController();
@@ -42,12 +47,24 @@ class _SignuppageState extends State<Signuppage> {
   final TextEditingController _confirmpasswordController =
       TextEditingController();
 
+  // role by default
+  String _selectedRole = 'user'; // user or admin
+
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
   bool _isLoading = false;
 
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final GoogleSignIn _googleSignIn = GoogleSignIn();
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+
+  // email validation regex
+  final RegExp _emailRegex =
+      RegExp(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$');
+
+  // password validation regex
+  final RegExp _passwordRegex = RegExp(
+      r'^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$');
 
   Future<void> _selectDate(BuildContext context) async {
     final DateTime? picked = await showDatePicker(
@@ -72,6 +89,21 @@ class _SignuppageState extends State<Signuppage> {
     }
   }
 
+  bool _validateEmail(String email) {
+    return _emailRegex.hasMatch(email);
+  }
+
+  bool _validatePassword(String password) {
+    return _passwordRegex.hasMatch(password);
+  }
+
+  bool _validatePhoneNumber(String phone) {
+    // Remove spaces and dashes
+    String cleanPhone = phone.replaceAll(RegExp(r'[\s-]'), '');
+    // check if exactly 10 digits
+    return cleanPhone.length == 10 && RegExp(r'^\d{10}$').hasMatch(cleanPhone);
+  }
+
   Future<void> _signUpWithEmail() async {
     // Validation
     if (_firstnameController.text.trim().isEmpty ||
@@ -85,13 +117,57 @@ class _SignuppageState extends State<Signuppage> {
       return;
     }
 
-    if (_passwordController.text.length < 8) {
-      _showSnackBar('Password must be at least 8 characters long.');
+    if (_selectedGender == null) {
+      _showSnackBar('Please select your gender');
+      return;
+    }
+
+    if (_selectedDateOfBirth == null) {
+      _showSnackBar('Please select your date of birth');
+      return;
+    }
+
+    if (_phonenumberController.text.trim().isEmpty) {
+      _showSnackBar('Please enter your phone number');
+      return;
+    }
+
+    if (!_validatePhoneNumber(_phonenumberController.text.trim())) {
+      _showSnackBar('Phone number must be exactly 10 digits.');
+      return;
+    }
+
+    if (_emailController.text.trim().isEmpty) {
+      _showSnackBar('Please enter your email address.');
+      return;
+    }
+
+    if (!_validateEmail(_emailController.text.trim())) {
+      _showSnackBar('Please enter a valid email address.');
+      return;
+    }
+
+    if (!_validatePassword(_passwordController.text)) {
+      _showSnackBar('Password must be at least 8 characters and include:\n'
+          '- Uppercase letter (A-Z)\n'
+          '- Lowercase letter (a-z)\n'
+          '- Number (0-9\n'
+          '- Special character (@\$!%*?&)');
       return;
     }
 
     if (_passwordController.text != _confirmpasswordController.text) {
       _showSnackBar('Passwords do not match.');
+      return;
+    }
+
+    if (isWorking && _placeofworkController.text.trim().isEmpty) {
+      _showSnackBar('Please enter your place of work.');
+      return;
+    }
+
+    if (isSchooling && _placeofschoolController.text.trim().isEmpty) {
+      _showSnackBar('Please enter your place of school.');
       return;
     }
 
@@ -109,13 +185,19 @@ class _SignuppageState extends State<Signuppage> {
       await userCredential.user?.updateDisplayName(displayName);
       await userCredential.user?.reload();
 
+      await _saveUserToFirestore(userCredential.user!.uid);
+
       if (!mounted) return;
 
-      _showSnackBar('Account created successfully!');
+      if (_selectedRole == 'admin') {
+        _showSnackBar('Admin request submitted! Awaiting approval.');
+      } else {
+        _showSnackBar('Account created successfully!');
+      }
 
       // Navigate to UserHomeScreen
-      Navigator.pushReplacement(
-          context, MaterialPageRoute(builder: (context) => const UserHomeScreen()));
+      Navigator.pushReplacement(context,
+          MaterialPageRoute(builder: (context) => const UserHomeScreen()));
     } on FirebaseAuthException catch (e) {
       if (!mounted) return;
       String message = 'Sign-up failed';
@@ -139,6 +221,46 @@ class _SignuppageState extends State<Signuppage> {
     }
   }
 
+  Future<void> _saveUserToFirestore(String uid) async {
+    String cleanPhone =
+        _phonenumberController.text.trim().replaceAll(RegExp(r'[\s-]'), '');
+
+    await _firestore.collection('users').doc(uid).set({
+      'uid': uid,
+      'email': _emailController.text.trim(),
+      'surname': _surnameController.text.trim(),
+      'firstname': _firstnameController.text.trim(),
+      'othername': _othernameController.text.trim().isEmpty
+          ? null
+          : _othernameController.text.trim(),
+      'gender': _selectedGender,
+      'date_of_birth': _selectedDateOfBirth,
+      'phone_number': cleanPhone,
+      'residence': _residenceController.text.trim().isEmpty
+          ? null
+          : _residenceController.text.trim(),
+      'occupation': _occupationController.text.trim().isEmpty
+          ? null
+          : _occupationController.text.trim(),
+      'isWorking': isWorking,
+      'isSchooling': isSchooling,
+      'placeOfWork': isWorking ? _placeofworkController.text.trim() : null,
+      'placeOfSchool':
+          isSchooling ? _placeofschoolController.text.trim() : null,
+      'courseOfStudy':
+          isSchooling ? _courseofstudyController.text.trim() : null,
+      'family': _familyController.text.trim().isEmpty
+          ? null
+          : _familyController.text.trim(),
+      'department': _departmentController.text.trim().isEmpty
+          ? null
+          : _departmentController.text.trim(),
+      'role': _selectedRole == 'admin' ? 'pending_admin' : 'user',
+      'isApproved': _selectedRole == 'user',
+      'createdAt': DateTime.now().toIso8601String(),
+    });
+  }
+
   Future<void> _signUpWithGoogle() async {
     setState(() => _isLoading = true);
 
@@ -155,11 +277,22 @@ class _SignuppageState extends State<Signuppage> {
       final credential = GoogleAuthProvider.credential(
           accessToken: googleAuth.accessToken, idToken: googleAuth.idToken);
 
-      await _auth.signInWithCredential(credential);
+      UserCredential userCredential =
+          await _auth.signInWithCredential(credential);
+
+      await _firestore.collection('users').doc(userCredential.user!.uid).set({
+        'uid': userCredential.user!.uid,
+        'email': userCredential.user!.email,
+        'firstName': userCredential.user!.displayName?.split(' ').first ?? '',
+        'surname': userCredential.user!.displayName?.split(' ').last ?? '',
+        'role': 'user',
+        'isApproved': true,
+        'createdAt': DateTime.now().toIso8601String(),
+      });
 
       if (!mounted) return;
-      Navigator.pushReplacement(
-          context, MaterialPageRoute(builder: (context) => const UserHomeScreen()));
+      Navigator.pushReplacement(context,
+          MaterialPageRoute(builder: (context) => const UserHomeScreen()));
     } catch (e) {
       if (!mounted) return;
       _showSnackBar('Google sign-up failed: $e');
@@ -170,7 +303,7 @@ class _SignuppageState extends State<Signuppage> {
 
   void _showSnackBar(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message)),
+      SnackBar(content: Text(message), duration: const Duration(seconds: 4)),
     );
   }
 
@@ -183,6 +316,7 @@ class _SignuppageState extends State<Signuppage> {
     _departmentController.dispose();
     _phonenumberController.dispose();
     _residenceController.dispose();
+    _occupationController.dispose();
     _placeofworkController.dispose();
     _placeofschoolController.dispose();
     _courseofstudyController.dispose();
@@ -230,6 +364,57 @@ class _SignuppageState extends State<Signuppage> {
                       height: 30,
                     ),
 
+                    // Role selection
+                    _buildSectionHeader('Account Type'),
+                    const SizedBox(
+                      height: 16,
+                    ),
+                    Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                          color: Colors.grey.shade50,
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: Colors.grey.shade300)),
+                      child: Column(
+                        children: [
+                          RadioListTile<String>(
+                            title: const Text('User'),
+                            subtitle: const Text(
+                                'Mark attendance, view my attendance records.'),
+                            value: 'user',
+                            groupValue: _selectedRole,
+                            activeColor: Colors.green,
+                            onChanged: (value) {
+                              setState(() {
+                                _selectedRole = value!;
+                              });
+                            },
+                          ),
+                          RadioListTile<String>(
+                            title: const Text('Admin'),
+                            subtitle: const Text(
+                                'Create attendance codes, analyze all data. (Requires approval)'),
+                            value: 'admin',
+                            groupValue: _selectedRole,
+                            activeColor: Colors.green,
+                            onChanged: (value) {
+                              setState(() {
+                                _selectedRole = value!;
+                              });
+                            },
+                          ),
+                        ],
+                      ),
+                    ),
+
+                    const SizedBox(
+                      height: 20,
+                    ),
+                    const Divider(),
+                    const SizedBox(
+                      height: 20,
+                    ),
+
                     // Personal information
                     _buildSectionHeader('Personal Information'),
                     const SizedBox(
@@ -253,12 +438,20 @@ class _SignuppageState extends State<Signuppage> {
                             child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(
-                              'Gender',
-                              style: TextStyle(
-                                  fontSize: 14,
-                                  color: Colors.grey.shade700,
-                                  fontWeight: FontWeight.w600),
+                            Row(
+                              children: [
+                                Text(
+                                  'Gender',
+                                  style: TextStyle(
+                                      fontSize: 14,
+                                      color: Colors.grey.shade700,
+                                      fontWeight: FontWeight.w600),
+                                ),
+                                const Text(
+                                  ' *',
+                                  style: TextStyle(color: Colors.red),
+                                )
+                              ],
                             ),
                             const SizedBox(
                               height: 6,
@@ -270,8 +463,14 @@ class _SignuppageState extends State<Signuppage> {
                                         horizontal: 20, vertical: 20),
                                     enabledBorder: OutlineInputBorder(
                                         borderRadius: BorderRadius.circular(12),
-                                        borderSide: const BorderSide(
-                                            color: Colors.green, width: 2))),
+                                        borderSide: BorderSide(
+                                            color: Colors.grey.shade400,
+                                            width: 1.5)),
+                                    focusedBorder: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(12),
+                                      borderSide: const BorderSide(
+                                          color: Colors.green, width: 2),
+                                    )),
                                 items: const [
                                   DropdownMenuItem(
                                       value: 'Male', child: Text('Male')),
@@ -290,12 +489,20 @@ class _SignuppageState extends State<Signuppage> {
                             child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(
-                              'Date of Birth',
-                              style: TextStyle(
-                                  fontSize: 14,
-                                  color: Colors.grey.shade700,
-                                  fontWeight: FontWeight.w600),
+                            Row(
+                              children: [
+                                Text(
+                                  'Date of Birth',
+                                  style: TextStyle(
+                                      fontSize: 14,
+                                      color: Colors.grey.shade700,
+                                      fontWeight: FontWeight.w600),
+                                ),
+                                const Text(
+                                  ' *',
+                                  style: TextStyle(color: Colors.red),
+                                )
+                              ],
                             ),
                             const SizedBox(
                               height: 6,
@@ -322,6 +529,7 @@ class _SignuppageState extends State<Signuppage> {
                                           color: _selectedDateOfBirth == null
                                               ? Colors.grey.shade600
                                               : Colors.black),
+                                      overflow: TextOverflow.ellipsis,
                                     ),
                                     Icon(
                                       Icons.calendar_today,
@@ -351,11 +559,9 @@ class _SignuppageState extends State<Signuppage> {
                       height: 16,
                     ),
 
-                    _buildTextField(
-                        'Phone Number', _phonenumberController, '0244-XXX-XXX',
-                        keyboardType: TextInputType.phone),
-                    _buildTextField(
-                        'Residence', _residenceController, 'Abeka-Lapaz'),
+                    _buildPhoneField(),
+                    _buildTextField('Residence', _residenceController,
+                        'Abeka-Lapaz (Optional)'),
 
                     const SizedBox(
                       height: 20,
@@ -371,12 +577,53 @@ class _SignuppageState extends State<Signuppage> {
                       height: 16,
                     ),
 
-                    _buildTextField('Place of Work', _placeofworkController,
-                        'Ghana Ltd (Optional)'),
-                    _buildTextField('Place of School', _placeofschoolController,
-                        'KNUST (Optional)'),
-                    _buildTextField('Course of Study', _courseofstudyController,
-                        'Computer Science (Optional)'),
+                    _buildTextField('Occupation', _occupationController,
+                        'Software Engineer/Student (Optional)'),
+
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Colors.grey.shade50,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: Colors.grey.shade300),
+                      ),
+                      child: Column(
+                        children: [
+                          CheckboxListTile(
+                            title: const Text('I am currently working'),
+                            value: isWorking,
+                            activeColor: Colors.green,
+                            onChanged: (value) {
+                              setState(() => isWorking = value ?? false);
+                            },
+                          ),
+                          CheckboxListTile(
+                            title: const Text('I am currently schooling'),
+                            value: isSchooling,
+                            activeColor: Colors.green,
+                            onChanged: (value) {
+                              setState(() => isSchooling = value ?? false);
+                            },
+                          )
+                        ],
+                      ),
+                    ),
+
+                    if (isWorking)
+                      _buildTextField(
+                          'Place of Work', _placeofworkController, 'Ghana Ltd',
+                          isRequired: true),
+
+                    if (isSchooling) ...[
+                      _buildTextField(
+                          'Place of School', _placeofschoolController, 'KNUST',
+                          isRequired: true),
+                      _buildTextField(
+                        'Course of Study',
+                        _courseofstudyController,
+                        'Computer Science (Optional)',
+                      )
+                    ],
 
                     const SizedBox(
                       height: 20,
@@ -421,7 +668,7 @@ class _SignuppageState extends State<Signuppage> {
                         _obscurePassword,
                         () => setState(
                             () => _obscurePassword = !_obscurePassword),
-                        'Minimum 8 characters',
+                        'Minimum 8 characters, uppercase, lowercase, number & special char',
                         isRequired: true),
                     _buildPasswordField(
                         'Confirm Password',
@@ -645,6 +892,58 @@ class _SignuppageState extends State<Signuppage> {
         )
       ],
     );
+  }
+
+  Widget _buildPhoneField() {
+    return Column(children: [
+      Align(
+        alignment: Alignment.centerLeft,
+        child: Row(
+          children: [
+            Text(
+              'Phone Number',
+              style: TextStyle(
+                  fontSize: 14,
+                  color: Colors.grey.shade700,
+                  fontWeight: FontWeight.w600),
+            ),
+            const Text(
+              ' *',
+              style: TextStyle(color: Colors.red),
+            )
+          ],
+        ),
+      ),
+      const SizedBox(
+        height: 6,
+      ),
+      TextFormField(
+        decoration: InputDecoration(
+          hintText: '0244123456',
+          helperText: 'Enter 10 digits only',
+          border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide.none),
+          contentPadding:
+              const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
+          enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide(color: Colors.grey.shade400, width: 1.5)),
+          focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: const BorderSide(color: Colors.green, width: 2)),
+        ),
+        keyboardType: TextInputType.phone,
+        controller: _phonenumberController,
+        inputFormatters: [
+          FilteringTextInputFormatter.digitsOnly,
+          LengthLimitingTextInputFormatter(10)
+        ],
+      ),
+      const SizedBox(
+        height: 20,
+      ),
+    ]);
   }
 
   Widget _buildPasswordField(String label, TextEditingController controller,
