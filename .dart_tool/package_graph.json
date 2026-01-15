@@ -16,6 +16,8 @@
         "google_sign_in",
         "lottie",
         "provider",
+        "qr",
+        "qr_flutter",
         "shared_preferences"
       ],
       "devDependencies": [
@@ -46,6 +48,21 @@
         "stream_channel",
         "test_api",
         "vector_math"
+      ]
+    },
+    {
+      "name": "qr_flutter",
+      "version": "4.1.0",
+      "dependencies": [
+        "flutter",
+        "qr"
+      ]
+    },
+    {
+      "name": "qr",
+      "version": "3.0.2",
+      "dependencies": [
+        "meta"
       ]
     },
     {
