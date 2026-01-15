@@ -43,6 +43,8 @@ dependencies:
   provider: ^6.1.5+1
   lottie: ^3.3.2
   cloud_firestore: ^6.1.1
+  qr: ^3.0.2
+  qr_flutter: ^4.1.0
 
 dev_dependencies:
   flutter_test:

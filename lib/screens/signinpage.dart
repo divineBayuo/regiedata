@@ -20,7 +20,7 @@ class _SigninpageState extends State<Signinpage> {
   bool _isLoading = false; // 👈 Added loader flag
 
   final FirebaseAuth _auth = FirebaseAuth.instance;
-  final GoogleSignIn _googleSignIn = GoogleSignIn();
+  final GoogleSignIn _googleSignIn = GoogleSignIn(clientId: '674155089068-bmhg625i9o99aq2caduqbudp6ugbabdg.apps.googleusercontent.com');
 
   @override
   void initState() {
