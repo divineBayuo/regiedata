@@ -19,6 +19,7 @@
         "provider",
         "qr",
         "qr_flutter",
+        "screenshot",
         "shared_preferences"
       ],
       "devDependencies": [
@@ -49,6 +50,13 @@
         "stream_channel",
         "test_api",
         "vector_math"
+      ]
+    },
+    {
+      "name": "screenshot",
+      "version": "3.0.0",
+      "dependencies": [
+        "flutter"
       ]
     },
     {
