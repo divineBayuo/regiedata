@@ -388,7 +388,7 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
   }
 
   void _showQRScanner(BuildContext context) {
-    Navigator.pushReplacement(
+    Navigator.push(
       context,
       MaterialPageRoute(
         builder: (context) => const QRScannerScreen(),
@@ -397,7 +397,7 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
   }
 
   void _showCodeInput(BuildContext context) {
-    Navigator.pushReplacement(
+    Navigator.push(
       context,
       MaterialPageRoute(
         builder: (context) => const CodeEntryScreen(),
