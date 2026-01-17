@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:regie_data/screens/all_attendance_screen.dart';
 import 'package:regie_data/screens/manage_users_screen.dart';
@@ -18,6 +19,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
   int _totalUsers = 0;
   int _totalAttendance = 0;
   int _todayAttendance = 0;
+  int _activeSessions = 0;
 
   @override
   void initState() {
@@ -42,10 +44,17 @@ class _AdminDashboardState extends State<AdminDashboard> {
             isGreaterThanOrEqualTo: Timestamp.fromDate(startOfDay))
         .get();
 
+    // Get active sessions
+    QuerySnapshot activeSessionsSnapshot = await _firestore
+        .collection('attendance_sessions')
+        .where('active', isEqualTo: true)
+        .get();
+
     setState(() {
       _totalUsers = usersSnapshot.docs.length;
       _totalAttendance = attendanceSnapshot.docs.length;
       _todayAttendance = todaySnapshot.docs.length;
+      _activeSessions = activeSessionsSnapshot.docs.length;
     });
   }
 
@@ -157,11 +166,28 @@ class _AdminDashboardState extends State<AdminDashboard> {
               height: 12,
             ),
 
-            _buildWideStatCard(
-              'Today\'s Attendance',
-              _todayAttendance.toString(),
-              Icons.today,
-              Colors.orange,
+            Row(
+              children: [
+                Expanded(
+                  child: _buildWideStatCard(
+                    'Today\'s Attendance',
+                    _todayAttendance.toString(),
+                    Icons.today,
+                    Colors.orange,
+                  ),
+                ),
+                const SizedBox(
+                  width: 12,
+                ),
+                Expanded(
+                  child: _buildWideStatCard(
+                    'Active Sessions',
+                    _activeSessions.toString(),
+                    Icons.event_available,
+                    Colors.green,
+                  ),
+                )
+              ],
             ),
 
             const SizedBox(
@@ -182,11 +208,23 @@ class _AdminDashboardState extends State<AdminDashboard> {
             ),
 
             _buildActionButton(
-              'Create QR Code',
-              'Generate QR code for attendance',
+              'Create Attendance Session',
+              'Generate QR code and PIN for attendance',
               Icons.qr_code,
               Colors.green,
-              () => _showCreateQRDialog(context),
+              () => _showCreateSessionDialog(context),
+            ),
+
+            const SizedBox(
+              height: 12,
+            ),
+
+            _buildActionButton(
+              'Active Sessions',
+              'View and manage active attendance sessions',
+              Icons.event_available,
+              Colors.blue,
+              () => _showActiveSessionsScreen(context),
             ),
 
             const SizedBox(
@@ -214,7 +252,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
               'Manage Users',
               'View and manage user accounts',
               Icons.people_outline,
-              Colors.purple,
+              Colors.indigo,
               () => Navigator.push(
                 context,
                 MaterialPageRoute(
@@ -228,17 +266,11 @@ class _AdminDashboardState extends State<AdminDashboard> {
             ),
 
             _buildActionButton(
-              'Analytics',
-              'View attendance statistics',
-              Icons.analytics,
-              Colors.orange,
-              () {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Analytics coming soon!'),
-                  ),
-                );
-              },
+              'Session History',
+              'View past attendance sessions',
+              Icons.history,
+              Colors.teal,
+              () => _showSessionHistoryScreen(context),
             ),
           ],
         ),
@@ -295,10 +327,10 @@ class _AdminDashboardState extends State<AdminDashboard> {
           Icon(
             icon,
             color: color,
-            size: 40,
+            size: 32,
           ),
           const SizedBox(
-            width: 16,
+            width: 12,
           ),
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -306,14 +338,14 @@ class _AdminDashboardState extends State<AdminDashboard> {
               Text(
                 value,
                 style: const TextStyle(
-                  fontSize: 32,
+                  fontSize: 28,
                   fontWeight: FontWeight.bold,
                 ),
               ),
               Text(
                 title,
                 style: TextStyle(
-                  fontSize: 14,
+                  fontSize: 12,
                   color: Colors.grey.shade600,
                 ),
               ),
@@ -385,91 +417,491 @@ class _AdminDashboardState extends State<AdminDashboard> {
     );
   }
 
-  void _showCreateQRDialog(BuildContext context) {
+  void _showCreateSessionDialog(BuildContext context) {
     TextEditingController eventNameController = TextEditingController();
     String generatedCode = '';
+    String sessionId = '';
 
     showDialog(
       context: context,
+      barrierDismissible: false,
       builder: (context) => StatefulBuilder(
         builder: (context, setDialogState) => AlertDialog(
           title: const Text('Create Attendance Code'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                controller: eventNameController,
-                decoration: const InputDecoration(
-                  labelText: 'Event Name',
-                  border: OutlineInputBorder(),
-                ),
-              ),
-              const SizedBox(
-                height: 16,
-              ),
-              if (generatedCode.isNotEmpty) ...[
-                const Text('QR Code:'),
-                const SizedBox(
-                  height: 8,
-                ),
-                QrImageView(
-                  data: generatedCode,
-                  version: QrVersions.auto,
-                  size: 200,
-                ),
-                const SizedBox(
-                  height: 8,
-                ),
-                Text(
-                  'Code: $generatedCode',
-                  style: const TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 18,
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (generatedCode.isEmpty) ...[
+                  TextField(
+                    controller: eventNameController,
+                    decoration: const InputDecoration(
+                      labelText: 'Event Name',
+                      hintText: 'e.g., Monday Youth Service - Family Wars',
+                      border: OutlineInputBorder(),
+                      prefixIcon: Icon(Icons.event),
+                    ),
                   ),
-                ),
-              ]
-            ],
+                ] else ...[
+                  // Show generated session details
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: Colors.green.shade50,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: Colors.green.shade200),
+                    ),
+                    child: Column(
+                      children: [
+                        Text(
+                          eventNameController.text,
+                          style: const TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const SizedBox(
+                          height: 16,
+                        ),
+                        const Text(
+                          'QR Code',
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        const SizedBox(
+                          height: 8,
+                        ),
+                        Container(
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: QrImageView(
+                            data: generatedCode,
+                            version: QrVersions.auto,
+                            size: 200,
+                          ),
+                        ),
+                        const SizedBox(
+                          height: 16,
+                        ),
+                        const Text(
+                          'PIN Code',
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        const SizedBox(
+                          height: 8,
+                        ),
+                        Container(
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: Colors.green),
+                          ),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Text(
+                                generatedCode,
+                                style: const TextStyle(
+                                  fontSize: 32,
+                                  fontWeight: FontWeight.bold,
+                                  letterSpacing: 4,
+                                  color: Colors.green,
+                                ),
+                              ),
+                              const SizedBox(
+                                width: 12,
+                              ),
+                              IconButton(
+                                onPressed: () {
+                                  Clipboard.setData(
+                                    ClipboardData(text: generatedCode),
+                                  );
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(
+                                      content: Text('PIN copied to clipboard!'),
+                                      duration: Duration(seconds: 2),
+                                    ),
+                                  );
+                                },
+                                icon: const Icon(Icons.copy),
+                                tooltip: 'Copy PIN',
+                              )
+                            ],
+                          ),
+                        ),
+                        const SizedBox(
+                          height: 16,
+                        ),
+                        Text(
+                          'Share this QR code or PIN with attendees',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.grey.shade700,
+                          ),
+                          textAlign: TextAlign.center,
+                        )
+                      ],
+                    ),
+                  )
+                ]
+              ],
+            ),
           ),
           actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('Close'),
-            ),
-            ElevatedButton(
-              onPressed: () async {
-                if (eventNameController.text.isEmpty) {
+            if (generatedCode.isEmpty) ...[
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('Cancel'),
+              ),
+              ElevatedButton(
+                onPressed: () async {
+                  if (eventNameController.text.trim().isEmpty) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Please enter event name'),
+                      ),
+                    );
+                    return;
+                  }
+
+                  // Generate unique code
+                  String code = DateTime.now()
+                      .millisecondsSinceEpoch
+                      .toString()
+                      .substring(6);
+
+                  // Save to Firestore
+                  DocumentReference docRef =
+                      await _firestore.collection('attendance_sessions').add({
+                    'code': code,
+                    'eventName': eventNameController.text,
+                    'createdAt': FieldValue.serverTimestamp(),
+                    'createdBy': FirebaseAuth.instance.currentUser?.uid,
+                    'active': true,
+                  });
+
+                  setDialogState(() {
+                    generatedCode = code;
+                    sessionId = docRef.id;
+                  });
+
+                  // Refresh stats
+                  _loadStats();
+                },
+                child: const Text('Generate'),
+              ),
+            ] else ...[
+              TextButton(
+                onPressed: () async {
+                  //Deactivate the session
+                  await _firestore
+                      .collection('attendance_sessions')
+                      .doc(sessionId)
+                      .update({'active': false});
+
+                  if (!context.mounted) return;
+                  Navigator.pop(context);
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(
-                      content: Text('Please enter event name'),
+                      content: Text('Session closed'),
+                      backgroundColor: Colors.orange,
                     ),
                   );
-                  return;
-                }
-
-                // Generate unique code
-                String code = DateTime.now()
-                    .millisecondsSinceEpoch
-                    .toString()
-                    .substring(7);
-
-                // Save to Firestore
-                await _firestore.collection('attendance_sessions').add({
-                  'code': code,
-                  'eventName': eventNameController.text,
-                  'createdAt': FieldValue.serverTimestamp(),
-                  'createdBy': FirebaseAuth.instance.currentUser?.uid,
-                  'active': true,
-                });
-
-                setDialogState(() {
-                  generatedCode = code;
-                });
-              },
-              child: const Text('Generate'),
-            ),
+                  _loadStats();
+                },
+                child: const Text('Close Session'),
+              ),
+              ElevatedButton(
+                onPressed: () {
+                  Navigator.pop(context);
+                },
+                child: const Text('Done'),
+              ),
+            ],
           ],
         ),
       ),
     );
+  }
+
+  void _showActiveSessionsScreen(BuildContext context) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => Scaffold(
+          appBar: AppBar(
+            title: const Text('Active Sessions'),
+            backgroundColor: Colors.green,
+            foregroundColor: Colors.white,
+          ),
+          body: StreamBuilder<QuerySnapshot>(
+            stream: _firestore
+                .collection('attendance_sessions')
+                .where('active', isEqualTo: true)
+                .orderBy('createdAt', descending: true)
+                .snapshots(),
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return const Center(
+                  child: CircularProgressIndicator(),
+                );
+              }
+
+              if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+                return const Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        Icons.event_busy,
+                        size: 80,
+                        color: Colors.grey,
+                      ),
+                      SizedBox(
+                        height: 16,
+                      ),
+                      Text(
+                        'No Active Sessions',
+                        style: TextStyle(
+                          fontSize: 18,
+                          color: Colors.grey,
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              }
+
+              return ListView.builder(
+                itemBuilder: (context, index) {
+                  var doc = snapshot.data!.docs[index];
+                  var data = doc.data() as Map<String, dynamic>;
+
+                  return Card(
+                    margin: const EdgeInsets.only(bottom: 16),
+                    child: ExpansionTile(
+                      leading: const CircleAvatar(
+                        backgroundColor: Colors.green,
+                        child: Icon(
+                          Icons.event,
+                          color: Colors.white,
+                        ),
+                      ),
+                      title: Text(data['eventName'] ?? 'Event'),
+                      subtitle: Text('PIN: ${data['code']}'),
+                      children: [
+                        Padding(
+                          padding: const EdgeInsets.all(16),
+                          child: Column(
+                            children: [
+                              // QR Code
+                              QrImageView(
+                                data: data['code'],
+                                version: QrVersions.auto,
+                                size: 150,
+                              ),
+                              const SizedBox(
+                                height: 16,
+                              ),
+
+                              // PIN Display
+                              Container(
+                                padding: const EdgeInsets.all(12),
+                                decoration: BoxDecoration(
+                                  color: Colors.green.shade50,
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Text(
+                                      'PIN: ${data['code']}',
+                                      style: const TextStyle(
+                                        fontSize: 24,
+                                        fontWeight: FontWeight.bold,
+                                        letterSpacing: 2,
+                                      ),
+                                    ),
+                                    IconButton(
+                                      onPressed: () {
+                                        Clipboard.setData(
+                                          ClipboardData(text: data['code']),
+                                        );
+                                        ScaffoldMessenger.of(context)
+                                            .showSnackBar(
+                                          const SnackBar(
+                                            content: Text('PIN copied'),
+                                          ),
+                                        );
+                                      },
+                                      icon: const Icon(Icons.copy),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              const SizedBox(
+                                height: 16,
+                              ),
+
+                              // Real-time attendance count
+                              StreamBuilder<QuerySnapshot>(
+                                stream: _firestore
+                                    .collection('attendance')
+                                    .where('sessionId', isEqualTo: doc.id)
+                                    .snapshots(),
+                                builder: (context, attendanceSnapshot) {
+                                  int count = attendanceSnapshot.hasData
+                                      ? attendanceSnapshot.data!.docs.length
+                                      : 0;
+                                  return Text(
+                                    '$count attendees',
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      color: Colors.grey.shade700,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  );
+                                },
+                              ),
+                              const SizedBox(
+                                height: 16,
+                              ),
+
+                              // Close Session Button
+                              ElevatedButton.icon(
+                                onPressed: () async {
+                                  await _firestore
+                                      .collection('attendance_sessions')
+                                      .doc(doc.id)
+                                      .update({'active': false});
+
+                                  if (!context.mounted) return;
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(
+                                      content: Text('Session Closed'),
+                                    ),
+                                  );
+                                  _loadStats();
+                                },
+                                icon: const Icon(Icons.close),
+                                label: const Text('Close Session'),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.orange,
+                                  foregroundColor: Colors.white,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                },
+              );
+            },
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _showSessionHistoryScreen(BuildContext context) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => Scaffold(
+          appBar: AppBar(
+            title: const Text('Session History'),
+            backgroundColor: Colors.green,
+            foregroundColor: Colors.white,
+          ),
+          body: StreamBuilder<QuerySnapshot>(
+            stream: _firestore
+                .collection('attendance_sessions')
+                .orderBy('createdAt', descending: true)
+                .snapshots(),
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return const Center(
+                  child: CircularProgressIndicator(),
+                );
+              }
+
+              if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+                return const Center(
+                  child: Text('No Sessions Found'),
+                );
+              }
+
+              return ListView.builder(
+                padding: const EdgeInsets.all(16),
+                itemCount: snapshot.data!.docs.length,
+                itemBuilder: (context, index) {
+                  var doc = snapshot.data!.docs[index];
+                  var data = doc.data() as Map<String, dynamic>;
+                  bool isActive = data['active'] ?? false;
+                  Timestamp? createdAt = data['createdAt'];
+
+                  return Card(
+                    margin: const EdgeInsets.only(bottom: 12),
+                    child: ListTile(
+                      leading: CircleAvatar(
+                        backgroundColor: isActive ? Colors.green : Colors.grey,
+                        child: Icon(
+                          isActive ? Icons.event_available : Icons.event_busy,
+                          color: Colors.white,
+                        ),
+                      ),
+                      title: Text(data['eventName'] ?? 'Event'),
+                      subtitle: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text('PIN: ${data['code']}'),
+                          if (createdAt != null)
+                            Text(
+                              'Created: ${_formatDate(createdAt.toDate())}',
+                              style: const TextStyle(fontSize: 12),
+                            ),
+                        ],
+                      ),
+                      trailing: StreamBuilder<QuerySnapshot>(
+                        stream: _firestore
+                            .collection('attendance')
+                            .where('sessionId', isEqualTo: doc.id)
+                            .snapshots(),
+                        builder: (context, attendanceSnapshot) {
+                          int count = attendanceSnapshot.hasData
+                              ? attendanceSnapshot.data!.docs.length
+                              : 0;
+                          return Chip(
+                            label: Text('$count'),
+                            backgroundColor: isActive
+                                ? Colors.green.shade100
+                                : Colors.grey.shade200,
+                          );
+                        },
+                      ),
+                    ),
+                  );
+                },
+              );
+            },
+          ),
+        ),
+      ),
+    );
+  }
+
+  String _formatDate(DateTime date) {
+    return ('${date.day}/${date.month}/${date.year} ${date.hour}:${date.minute.toString().padLeft(2, '0')}');
   }
 }
