@@ -1,11 +1,15 @@
+import 'dart:ui' as ui;
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:regie_data/screens/all_attendance_screen.dart';
 import 'package:regie_data/screens/manage_users_screen.dart';
 import 'package:regie_data/screens/signinpage.dart';
+import 'package:share_plus/share_plus.dart';
 
 class AdminDashboard extends StatefulWidget {
   const AdminDashboard({super.key});
@@ -26,6 +30,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
     super.initState();
     _loadStats();
   }
+
 
   Future<void> _loadStats() async {
     // Get total users
@@ -421,6 +426,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
     TextEditingController eventNameController = TextEditingController();
     String generatedCode = '';
     String sessionId = '';
+    final GlobalKey qrImageKey = GlobalKey();
 
     showDialog(
       context: context,
@@ -444,113 +450,133 @@ class _AdminDashboardState extends State<AdminDashboard> {
                   ),
                 ] else ...[
                   // Show generated session details
-                  Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: Colors.green.shade50,
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: Colors.green.shade200),
-                    ),
-                    child: Column(
-                      children: [
-                        Text(
-                          eventNameController.text,
-                          style: const TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
+                  RepaintBoundary(
+                    key: qrImageKey,
+                    child: Container(
+                      padding: const EdgeInsets.all(24),
+                      color: Colors.white,
+                      child: Column(
+                        children: [
+                          Text(
+                            eventNameController.text,
+                            style: const TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
-                        ),
-                        const SizedBox(
-                          height: 16,
-                        ),
-                        const Text(
-                          'QR Code',
-                          style: TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w600,
+                          const SizedBox(
+                            height: 16,
                           ),
-                        ),
-                        const SizedBox(
-                          height: 8,
-                        ),
-                        Container(
-                          padding: const EdgeInsets.all(16),
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(12),
+                          const Text(
+                            'QR Code',
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                            ),
                           ),
-                          child: QrImageView(
-                            data: generatedCode,
-                            version: QrVersions.auto,
-                            size: 200,
+                          const SizedBox(
+                            height: 8,
                           ),
-                        ),
-                        const SizedBox(
-                          height: 16,
-                        ),
-                        const Text(
-                          'PIN Code',
-                          style: TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w600,
+                          Container(
+                            padding: const EdgeInsets.all(16),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(color: Colors.green, width: 2),
+                            ),
+                            child: QrImageView(
+                              data: generatedCode,
+                              version: QrVersions.auto,
+                              size: 200,
+                            ),
                           ),
-                        ),
-                        const SizedBox(
-                          height: 8,
-                        ),
-                        Container(
-                          padding: const EdgeInsets.all(16),
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(color: Colors.green),
+                          const SizedBox(
+                            height: 16,
                           ),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Text(
-                                generatedCode,
-                                style: const TextStyle(
-                                  fontSize: 32,
-                                  fontWeight: FontWeight.bold,
-                                  letterSpacing: 4,
-                                  color: Colors.green,
-                                ),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 24,
+                              vertical: 12,
+                            ),
+                            decoration: BoxDecoration(
+                                color: Colors.green.shade50,
+                                borderRadius: BorderRadius.circular(12)),
+                            child: Text(
+                              'PIN: $generatedCode',
+                              style: const TextStyle(
+                                fontSize: 24,
+                                fontWeight: FontWeight.bold,
+                                letterSpacing: 3,
                               ),
-                              const SizedBox(
-                                width: 12,
-                              ),
-                              IconButton(
-                                onPressed: () {
-                                  Clipboard.setData(
-                                    ClipboardData(text: generatedCode),
-                                  );
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(
-                                      content: Text('PIN copied to clipboard!'),
-                                      duration: Duration(seconds: 2),
-                                    ),
-                                  );
-                                },
-                                icon: const Icon(Icons.copy),
-                                tooltip: 'Copy PIN',
-                              )
-                            ],
+                            ),
                           ),
-                        ),
-                        const SizedBox(
-                          height: 16,
-                        ),
-                        Text(
-                          'Share this QR code or PIN with attendees',
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: Colors.grey.shade700,
+                          const SizedBox(
+                            height: 12,
                           ),
-                          textAlign: TextAlign.center,
-                        )
-                      ],
+                          const Text(
+                            'Scan QR or enter PIN to mark attendance',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.grey,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
+                  ),
+                  const SizedBox(
+                    height: 16,
+                  ),
+                  // Share buttons
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    children: [
+                      // Copy button
+                      ElevatedButton.icon(
+                        onPressed: () {
+                          Clipboard.setData(ClipboardData(text: generatedCode));
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('PIN copied to clipboard!'),
+                              duration: Duration(seconds: 2),
+                            ),
+                          );
+                        },
+                        icon: const Icon(
+                          Icons.copy,
+                          size: 18,
+                        ),
+                        label: const Text('Copy PIN'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.blue,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 12,
+                          ),
+                        ),
+                      ),
+                      // Save/Share QR
+                      ElevatedButton.icon(
+                        onPressed: () async {
+                          await _captureAndShareQR(context, qrImageKey,
+                              eventNameController.text, generatedCode);
+                        },
+                        icon: const Icon(
+                          Icons.share,
+                          size: 18,
+                        ),
+                        label: const Text('Share QR'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.green,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 12,
+                          ),
+                        ),
+                      ),
+                    ],
                   )
                 ]
               ],
@@ -583,7 +609,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
                   DocumentReference docRef =
                       await _firestore.collection('attendance_sessions').add({
                     'code': code,
-                    'eventName': eventNameController.text,
+                    'eventName': eventNameController.text.trim(),
                     'createdAt': FieldValue.serverTimestamp(),
                     'createdBy': FirebaseAuth.instance.currentUser?.uid,
                     'active': true,
@@ -631,6 +657,34 @@ class _AdminDashboardState extends State<AdminDashboard> {
         ),
       ),
     );
+  }
+
+  Future<void> _captureAndShareQR(BuildContext context, GlobalKey qrKey,
+      String eventName, String code) async {
+    try {
+      // Find render object
+      RenderRepaintBoundary boundary =
+          qrKey.currentContext!.findRenderObject() as RenderRepaintBoundary;
+
+      // Capture the image
+      ui.Image image = await boundary.toImage(pixelRatio: 3.0);
+      ByteData? byteData =
+          await image.toByteData(format: ui.ImageByteFormat.png);
+      Uint8List pngBytes = byteData!.buffer.asUint8List();
+
+      // Use share_plus to share the image here
+      await Share.shareXFiles(
+        [XFile.fromData(pngBytes, name: 'qr_code.png', mimeType: 'image/png')],
+        text: 'Attendance QR Code\nEvent: $eventName\nPIN: $code',
+      );
+    } catch (e) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error: ${e.toString()}'),
+        ),
+      );
+    }
   }
 
   void _showActiveSessionsScreen(BuildContext context) {
