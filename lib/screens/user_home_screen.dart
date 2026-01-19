@@ -3,7 +3,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:regie_data/screens/attendance_history_screen.dart';
 import 'package:regie_data/screens/code_entry_screen.dart';
 import 'package:regie_data/screens/qr_scanner_screen.dart';
