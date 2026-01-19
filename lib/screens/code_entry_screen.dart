@@ -34,12 +34,12 @@ class _CodeEntryScreenState extends State<CodeEntryScreen> {
             const SizedBox(
               height: 24,
             ),
-            const Text(
+            Text(
               'Enter Attendance Code',
               style: TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-              ),
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.grey.shade100),
             ),
             const SizedBox(
               height: 8,
@@ -204,12 +204,16 @@ class _CodeEntryScreenState extends State<CodeEntryScreen> {
     } catch (e) {
       _showSnackBar('Error: ${e.toString()}');
     } finally {
-      if (mounted) setState(()=> _isLoading = false);
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 
-  void _showSnackBar(String message){
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message),),);
+  void _showSnackBar(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+      ),
+    );
   }
 
   @override

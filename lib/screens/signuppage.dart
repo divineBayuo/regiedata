@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/services.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import 'package:regie_data/helper_functions/role_navigation.dart';
+import 'package:regie_data/screens/google_profile_completion_screen.dart';
 import 'package:regie_data/screens/signinpage.dart';
 import 'package:regie_data/screens/user_home_screen.dart';
 
@@ -55,7 +57,9 @@ class _SignuppageState extends State<Signuppage> {
   bool _isLoading = false;
 
   final FirebaseAuth _auth = FirebaseAuth.instance;
-  final GoogleSignIn _googleSignIn = GoogleSignIn();
+  final GoogleSignIn _googleSignIn = GoogleSignIn(
+      clientId:
+          '674155089068-bmhg625i9o99aq2caduqbudp6ugbabdg.apps.googleusercontent.com');
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
   // email validation regex
@@ -280,19 +284,30 @@ class _SignuppageState extends State<Signuppage> {
       UserCredential userCredential =
           await _auth.signInWithCredential(credential);
 
-      await _firestore.collection('users').doc(userCredential.user!.uid).set({
-        'uid': userCredential.user!.uid,
-        'email': userCredential.user!.email,
-        'firstName': userCredential.user!.displayName?.split(' ').first ?? '',
-        'surname': userCredential.user!.displayName?.split(' ').last ?? '',
-        'role': 'user',
-        'isApproved': true,
-        'createdAt': DateTime.now().toIso8601String(),
-      });
+      // Check if user already has a complete profile
+      DocumentSnapshot userDoc = await _firestore
+          .collection('users')
+          .doc(userCredential.user!.uid)
+          .get();
 
       if (!mounted) return;
-      Navigator.pushReplacement(context,
-          MaterialPageRoute(builder: (context) => const UserHomeScreen()));
+
+      if (userDoc.exists) {
+        navigateBasedOnRole(context);
+      } else {
+        // New user, navigate to profile completion
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (context) => GoogleProfileCompletionScreen(
+              user: userCredential.user!,
+              email: userCredential.user!.email!,
+              displayName: userCredential.user!.displayName,
+            ),
+          ),
+        );
+      }
+
     } catch (e) {
       if (!mounted) return;
       _showSnackBar('Google sign-up failed: $e');
