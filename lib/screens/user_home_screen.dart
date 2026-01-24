@@ -3,6 +3,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:regie_data/helper_functions/organization_context.dart';
 import 'package:regie_data/screens/attendance_history_screen.dart';
 import 'package:regie_data/screens/code_entry_screen.dart';
 import 'package:regie_data/screens/qr_scanner_screen.dart';
@@ -300,85 +301,103 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
   }
 
   Widget _buildRecentAttendanceList() {
-    User? user = _auth.currentUser;
-    if (user == null) return const Text('No user logged in');
-
-    return StreamBuilder<QuerySnapshot>(
-      stream: _firestore
-          .collection('attendance')
-          .where('userId', isEqualTo: user.uid)
-          .orderBy('timestamp', descending: true)
-          .limit(5)
-          .snapshots(),
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(child: CircularProgressIndicator());
-        }
-
-        if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-          return Container(
-            padding: const EdgeInsets.all(24),
-            decoration: BoxDecoration(
-              color: Colors.grey.shade50,
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: const Center(
-              child: Text('No attendance records yet'),
-            ),
+    return FutureBuilder<String?>(
+      future: OrganizationContext.getCurrentOrganizationId(),
+      builder: (context, orgSnapshot) {
+        if (!orgSnapshot.hasData) {
+          return const Center(
+            child: CircularProgressIndicator(),
           );
         }
 
-        return ListView.builder(
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          itemCount: snapshot.data!.docs.length,
-          itemBuilder: (context, index) {
-            var doc = snapshot.data!.docs[index];
-            var data = doc.data() as Map<String, dynamic>;
-            DateTime timestamp = (data['timestamp'] as Timestamp).toDate();
+        String? orgId = orgSnapshot.data;
+        if (orgId == null) {
+          return const Text('No organization selected');
+        }
 
-            return Container(
-              margin: const EdgeInsets.only(bottom: 12),
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: Colors.grey.shade300),
-              ),
-              child: Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: Colors.green.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: const Icon(
-                      Icons.check,
-                      color: Colors.green,
-                    ),
+        User? user = _auth.currentUser;
+        if (user == null) return const Text('No user logged in');
+
+        return StreamBuilder<QuerySnapshot>(
+          stream: _firestore
+              .collection('attendance')
+              .where('userId', isEqualTo: user.uid)
+              .where('organizationId', isEqualTo: orgId)
+              .orderBy('timestamp', descending: true)
+              .limit(5)
+              .snapshots(),
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return const Center(child: CircularProgressIndicator());
+            }
+
+            if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+              return Container(
+                padding: const EdgeInsets.all(24),
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade50,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Center(
+                  child: Text('No attendance records yet'),
+                ),
+              );
+            }
+
+            return ListView.builder(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              itemCount: snapshot.data!.docs.length,
+              itemBuilder: (context, index) {
+                var doc = snapshot.data!.docs[index];
+                var data = doc.data() as Map<String, dynamic>;
+                DateTime timestamp = (data['timestamp'] as Timestamp).toDate();
+
+                return Container(
+                  margin: const EdgeInsets.only(bottom: 12),
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: Colors.grey.shade300),
                   ),
-                  const SizedBox(
-                    width: 16,
-                  ),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          data['eventName'] ?? 'Attendance',
-                          style: const TextStyle(fontWeight: FontWeight.w600),
+                  child: Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: Colors.green.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(8),
                         ),
-                        Text(
-                          '${timestamp.day}/${timestamp.month}/${timestamp.year} at ${timestamp.hour}:${timestamp.minute.toString().padLeft(2, '0')}',
-                          style: TextStyle(
-                              fontSize: 12, color: Colors.grey.shade600),
-                        )
-                      ],
-                    ),
+                        child: const Icon(
+                          Icons.check,
+                          color: Colors.green,
+                        ),
+                      ),
+                      const SizedBox(
+                        width: 16,
+                      ),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              data['eventName'] ?? 'Attendance',
+                              style:
+                                  const TextStyle(fontWeight: FontWeight.w600),
+                            ),
+                            Text(
+                              '${timestamp.day}/${timestamp.month}/${timestamp.year} at ${timestamp.hour}:${timestamp.minute.toString().padLeft(2, '0')}',
+                              style: TextStyle(
+                                  fontSize: 12, color: Colors.grey.shade600),
+                            )
+                          ],
+                        ),
+                      ),
+                    ],
                   ),
-                ],
-              ),
+                );
+              },
             );
           },
         );

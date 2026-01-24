@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:qr_flutter/qr_flutter.dart';
+import 'package:regie_data/helper_functions/organization_context.dart';
 import 'package:regie_data/screens/all_attendance_screen.dart';
 import 'package:regie_data/screens/manage_users_screen.dart';
 import 'package:regie_data/screens/signinpage.dart';
@@ -24,6 +25,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
   int _totalAttendance = 0;
   int _todayAttendance = 0;
   int _activeSessions = 0;
+  int _totalOrgMembers = 0;
 
   @override
   void initState() {
@@ -31,20 +33,34 @@ class _AdminDashboardState extends State<AdminDashboard> {
     _loadStats();
   }
 
-
   Future<void> _loadStats() async {
+    String? orgId = await OrganizationContext.getCurrentOrganizationId();
+    if (orgId == null) {
+      _showSnackBar('No organization selected');
+      return;
+    }
+
+    // Get organization members count
+    QuerySnapshot membersSnapshot = await _firestore
+        .collection('organization_members')
+        .where('organizationId', isEqualTo: orgId)
+        .get();
+
+    // Get total attendance for this org
+    QuerySnapshot attendanceSnapshot = await _firestore
+        .collection('attendance')
+        .where('organizationId', isEqualTo: orgId)
+        .get();
+
     // Get total users
     QuerySnapshot usersSnapshot = await _firestore.collection('users').get();
-
-    // Get total attendance
-    QuerySnapshot attendanceSnapshot =
-        await _firestore.collection('attendance').get();
 
     // Get today's attendance
     DateTime now = DateTime.now();
     DateTime startOfDay = DateTime(now.year, now.month, now.day);
     QuerySnapshot todaySnapshot = await _firestore
         .collection('attendance')
+        .where('organizationId', isEqualTo: orgId)
         .where('timestamp',
             isGreaterThanOrEqualTo: Timestamp.fromDate(startOfDay))
         .get();
@@ -52,6 +68,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
     // Get active sessions
     QuerySnapshot activeSessionsSnapshot = await _firestore
         .collection('attendance_sessions')
+        .where('organizationId', isEqualTo: orgId)
         .where('active', isEqualTo: true)
         .get();
 
@@ -60,6 +77,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
       _totalAttendance = attendanceSnapshot.docs.length;
       _todayAttendance = todaySnapshot.docs.length;
       _activeSessions = activeSessionsSnapshot.docs.length;
+      _totalOrgMembers = membersSnapshot.docs.length;
     });
   }
 
@@ -154,12 +172,23 @@ class _AdminDashboardState extends State<AdminDashboard> {
                   ),
                 ),
                 const SizedBox(
-                  width: 12,
+                  width: 8,
                 ),
                 Expanded(
                   child: _buildStatCard(
                     'Total Records',
                     _totalAttendance.toString(),
+                    Icons.check_circle,
+                    Colors.purple,
+                  ),
+                ),
+                const SizedBox(
+                  width: 8,
+                ),
+                Expanded(
+                  child: _buildStatCard(
+                    'Total Number of Members',
+                    _totalOrgMembers.toString(),
                     Icons.check_circle,
                     Colors.purple,
                   ),
@@ -599,6 +628,15 @@ class _AdminDashboardState extends State<AdminDashboard> {
                     return;
                   }
 
+                  String? orgId =
+                      await OrganizationContext.getCurrentOrganizationId();
+                  if (orgId == null) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('No organization selected')),
+                    );
+                    return;
+                  }
+
                   // Generate unique code
                   String code = DateTime.now()
                       .millisecondsSinceEpoch
@@ -613,6 +651,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
                     'createdAt': FieldValue.serverTimestamp(),
                     'createdBy': FirebaseAuth.instance.currentUser?.uid,
                     'active': true,
+                    'organizationId': orgId,
                   });
 
                   setDialogState(() {
@@ -687,7 +726,10 @@ class _AdminDashboardState extends State<AdminDashboard> {
     }
   }
 
-  void _showActiveSessionsScreen(BuildContext context) {
+  void _showActiveSessionsScreen(BuildContext context) async {
+    String? orgId = await OrganizationContext.getCurrentOrganizationId();
+    if (orgId == null) return;
+
     Navigator.push(
       context,
       MaterialPageRoute(
@@ -700,6 +742,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
           body: StreamBuilder<QuerySnapshot>(
             stream: _firestore
                 .collection('attendance_sessions')
+                .where('organizationId', isEqualTo: orgId)
                 .where('active', isEqualTo: true)
                 .orderBy('createdAt', descending: true)
                 .snapshots(),
@@ -868,7 +911,10 @@ class _AdminDashboardState extends State<AdminDashboard> {
     );
   }
 
-  void _showSessionHistoryScreen(BuildContext context) {
+  void _showSessionHistoryScreen(BuildContext context) async {
+    String? orgId = await OrganizationContext.getCurrentOrganizationId();
+    if (orgId == null) return;
+
     Navigator.push(
       context,
       MaterialPageRoute(
@@ -881,6 +927,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
           body: StreamBuilder<QuerySnapshot>(
             stream: _firestore
                 .collection('attendance_sessions')
+                .where('organizationId', isEqualTo: orgId)
                 .orderBy('createdAt', descending: true)
                 .snapshots(),
             builder: (context, snapshot) {
@@ -951,6 +998,15 @@ class _AdminDashboardState extends State<AdminDashboard> {
             },
           ),
         ),
+      ),
+    );
+  }
+
+  void _showSnackBar(String message, {int duration = 3}) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        duration: Duration(seconds: duration),
       ),
     );
   }

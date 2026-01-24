@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
+import 'package:regie_data/helper_functions/organization_context.dart';
 
 class QRScannerScreen extends StatefulWidget {
   const QRScannerScreen({super.key});
@@ -96,31 +97,34 @@ class _QRScannerScreenState extends State<QRScannerScreen> {
 
   Future<void> _processQRCode(String code) async {
     if (_isProcessing) return;
-    setState(
-      () {
-        _isProcessing = true;
-      },
-    );
+    setState(() => _isProcessing = true);
 
     try {
       // Vibrate on scan
       HapticFeedback.vibrate();
 
-      // Verify the code exists in Firestore
+      // Get current user's organization
+      String? orgId = await OrganizationContext.getCurrentOrganizationId();
+      if (orgId == null) {
+        if (!mounted) return;
+        _showErrorDialog('Error', 'No organization selected');
+        setState(() => _isProcessing = false);
+        return;
+      }
+
+      // Verify the code exists and belongs to user's organization in Firestore
       QuerySnapshot sessionQuery = await FirebaseFirestore.instance
           .collection('attendance_sessions')
           .where('code', isEqualTo: code)
+          .where('organizationId', isEqualTo: orgId)
           .where('active', isEqualTo: true)
           .limit(1)
           .get();
 
       if (sessionQuery.docs.isEmpty) {
         if (!mounted) return;
-        _showErrorDialog(
-            'Invalid Code', 'This QR code is innvalid or expired.');
-        setState(() {
-          _isProcessing = false;
-        });
+        _showErrorDialog('Invalid Code', 'This QR code is invalid or expired.');
+        setState(() => _isProcessing = false);
         return;
       }
 
@@ -161,6 +165,7 @@ class _QRScannerScreenState extends State<QRScannerScreen> {
       await FirebaseFirestore.instance.collection('attendance').add({
         'userId': user.uid,
         'sessionId': sessionQuery.docs.first.id,
+        'organizationId': orgId,
         'eventName': eventName,
         'timestamp': FieldValue.serverTimestamp(),
         'markedVia': 'qr_code',

@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:regie_data/helper_functions/organization_context.dart';
 
 class CodeEntryScreen extends StatefulWidget {
   const CodeEntryScreen({super.key});
@@ -134,15 +135,22 @@ class _CodeEntryScreenState extends State<CodeEntryScreen> {
       return;
     }
 
-    setState(() {
-      _isLoading = true;
-    });
+    setState(() => _isLoading = true);
 
     try {
-      // Verify code exists in Firestore
+      // Get current user's organization
+      String? orgId = await OrganizationContext.getCurrentOrganizationId();
+      if (orgId == null) {
+        _showSnackBar('No organization selected');
+        setState(() => _isLoading = false);
+        return;
+      }
+
+      // Verify code exists and belongs to user's organization in Firestore
       QuerySnapshot sessionQuery = await FirebaseFirestore.instance
           .collection('attendance_sessions')
           .where('code', isEqualTo: code)
+          .where('organizationId', isEqualTo: orgId)
           .where('active', isEqualTo: true)
           .limit(1)
           .get();
@@ -185,6 +193,7 @@ class _CodeEntryScreenState extends State<CodeEntryScreen> {
       await FirebaseFirestore.instance.collection('attendance').add({
         'userId': user.uid,
         'sessionId': sessionQuery.docs.first.id,
+        'organizationId': orgId,
         'eventName': eventName,
         'timestamp': FieldValue.serverTimestamp(),
         'markedVia': 'code_entry',
