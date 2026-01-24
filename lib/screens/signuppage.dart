@@ -5,8 +5,8 @@ import 'package:flutter/services.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:regie_data/helper_functions/role_navigation.dart';
 import 'package:regie_data/screens/google_profile_completion_screen.dart';
+import 'package:regie_data/screens/organization_selector_screen.dart';
 import 'package:regie_data/screens/signinpage.dart';
-import 'package:regie_data/screens/user_home_screen.dart';
 
 class Signuppage extends StatefulWidget {
   const Signuppage({super.key});
@@ -189,19 +189,36 @@ class _SignuppageState extends State<Signuppage> {
       await userCredential.user?.updateDisplayName(displayName);
       await userCredential.user?.reload();
 
+      // Navigate to organizationn selector
+      if (!mounted) return;
+      final bool? orgSelected = await Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => OrganizationSelectorScreen(),
+        ),
+      );
+
+      // If no organization selected, delete auth account
+      if (orgSelected != true) {
+        await userCredential.user?.delete();
+        if (!mounted) return;
+        _showSnackBar('You must join or create an organization');
+        setState(() => _isLoading = false);
+        return;
+      }
+
+      // Now save user to firestore
       await _saveUserToFirestore(userCredential.user!.uid);
 
       if (!mounted) return;
-
       if (_selectedRole == 'admin') {
         _showSnackBar('Admin request submitted! Awaiting approval.');
       } else {
         _showSnackBar('Account created successfully!');
       }
 
-      // Navigate to UserHomeScreen
-      Navigator.pushReplacement(context,
-          MaterialPageRoute(builder: (context) => const UserHomeScreen()));
+      // Navigate based on role
+      navigateBasedOnRole(context);
     } on FirebaseAuthException catch (e) {
       if (!mounted) return;
       String message = 'Sign-up failed';
@@ -279,23 +296,41 @@ class _SignuppageState extends State<Signuppage> {
           await googleUser.authentication;
 
       final credential = GoogleAuthProvider.credential(
-          accessToken: googleAuth.accessToken, idToken: googleAuth.idToken);
+        accessToken: googleAuth.accessToken,
+        idToken: googleAuth.idToken,
+      );
 
       UserCredential userCredential =
           await _auth.signInWithCredential(credential);
 
-      // Check if user already has a complete profile
-      DocumentSnapshot userDoc = await _firestore
-          .collection('users')
-          .doc(userCredential.user!.uid)
+      // Check if user already has organization membership
+      QuerySnapshot membershipCheck = await _firestore
+          .collection('organization_members')
+          .where('userId', isEqualTo: userCredential.user!.uid)
+          .limit(1)
           .get();
 
       if (!mounted) return;
 
-      if (userDoc.exists) {
-        navigateBasedOnRole(context);
-      } else {
-        // New user, navigate to profile completion
+      if (membershipCheck.docs.isEmpty) {
+        // New user - need organization selection
+        final bool? orgSelected = await Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => OrganizationSelectorScreen(),
+          ),
+        );
+
+        if (orgSelected != true) {
+          await userCredential.user?.delete();
+          await _googleSignIn.signOut();
+          if (!mounted) return;
+          _showSnackBar('You must join or create an organization');
+          setState(() => _isLoading = false);
+          return;
+        }
+
+        // Navigate to profile completion
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(
@@ -306,6 +341,9 @@ class _SignuppageState extends State<Signuppage> {
             ),
           ),
         );
+      } else {
+        // Existing user
+        navigateBasedOnRole(context);
       }
 
     } catch (e) {

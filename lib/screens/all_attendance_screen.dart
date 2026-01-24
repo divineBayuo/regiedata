@@ -1,11 +1,43 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:regie_data/helper_functions/organization_context.dart';
 
-class AllAttendanceScreen extends StatelessWidget {
+class AllAttendanceScreen extends StatefulWidget {
   const AllAttendanceScreen({super.key});
 
   @override
+  State<AllAttendanceScreen> createState() => _AllAttendanceScreenState();
+}
+
+class _AllAttendanceScreenState extends State<AllAttendanceScreen> {
+  String? _orgId;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadOrgId();
+  }
+
+  Future<void> _loadOrgId() async {
+    String? orgId = await OrganizationContext.getCurrentOrganizationId();
+    setState(() => _orgId = orgId);
+  }
+
+  @override
   Widget build(BuildContext context) {
+    if (_orgId == null) {
+      return Scaffold(
+        appBar: AppBar(
+          title: const Text('All Attendance Records'),
+          backgroundColor: Colors.green,
+          foregroundColor: Colors.white,
+        ),
+        body: const Center(
+          child: CircularProgressIndicator(),
+        ),
+      );
+    }
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('All Attendance Records'),
@@ -15,6 +47,7 @@ class AllAttendanceScreen extends StatelessWidget {
       body: StreamBuilder<QuerySnapshot>(
         stream: FirebaseFirestore.instance
             .collection('attendance')
+            .where('organizationId', isEqualTo: _orgId!)
             .orderBy('timestamp', descending: true)
             .snapshots(),
         builder: (context, snapshot) {
