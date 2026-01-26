@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:regie_data/helper_functions/role_navigation.dart';
+import 'package:regie_data/screens/organization_selector_screen.dart';
 
 class GoogleProfileCompletionScreen extends StatefulWidget {
   final User user;
@@ -170,8 +171,28 @@ class _GoogleProfileCompletionScreenState
         'createdAt': DateTime.now().toIso8601String(),
       });
 
+      print('Profile saved to Firestore');
+
       if (!mounted) return;
 
+      // Navigate to organization selector
+      final bool? orgSelected = await Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => const OrganizationSelectorScreen(),
+        ),
+      );
+
+      if (!mounted) return;
+
+      if (orgSelected != true) {
+        // User didn't create/select an organization to proceed
+        _showSnackBar('Please select or create an organization to continue');
+        setState(() => _isLoading = false);
+        return;
+      }
+
+      // Organization selected, now navigate
       if (_selectedRole == 'admin') {
         _showSnackBar('Profile completed! Admin request submitted.');
       } else {
@@ -180,7 +201,9 @@ class _GoogleProfileCompletionScreenState
 
       // Navigate based on role
       navigateBasedOnRole(context);
+
     } catch (e) {
+      print('Error completing profile: $e');
       if (!mounted) return;
       _showSnackBar('Error saving profile: $e');
     } finally {
@@ -728,7 +751,9 @@ class _GoogleProfileCompletionScreenState
             LengthLimitingTextInputFormatter(10),
           ],
         ),
-        const SizedBox(height: 16,),
+        const SizedBox(
+          height: 16,
+        ),
       ],
     );
   }

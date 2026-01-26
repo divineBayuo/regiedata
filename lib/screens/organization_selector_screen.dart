@@ -26,14 +26,28 @@ class _OrganizationSelectorScreenState
   Future<void> _loadOrganizations() async {
     User? user = FirebaseAuth.instance.currentUser;
     if (user != null) {
-      List<OrganizationModel> orgs =
-          await _orgService.getUserOrganizations(user.uid);
-      setState(
-        () {
-          _organizations = orgs;
+      try {
+        List<OrganizationModel> orgs =
+            await _orgService.getUserOrganizations(user.uid);
+        setState(
+          () {
+            _organizations = orgs;
+            _isLoading = false;
+          },
+        );
+      } catch (e) {
+        print('Error loading organizations: $e');
+        setState(() {
           _isLoading = false;
-        },
-      );
+        });
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Error loading organizations: $e'),
+            ),
+          );
+        }
+      }
     }
   }
 
@@ -134,9 +148,19 @@ class _OrganizationSelectorScreenState
             onTap: () async {
               User? user = FirebaseAuth.instance.currentUser;
               if (user != null) {
-                await _orgService.setActiveOrganization(user.uid, org.id);
-                if (!mounted) return;
-                Navigator.pop(context, true);
+                try {
+                  await _orgService.setActiveOrganization(user.uid, org.id);
+                  if (!mounted) return;
+                  Navigator.pop(context, true);
+                } catch (e) {
+                  print('Error setting active organization: $e');
+                  if (!mounted) return;
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Error: $e'),
+                    ),
+                  );
+                }
               }
             },
           ),
@@ -147,143 +171,245 @@ class _OrganizationSelectorScreenState
 
   void _showCreateOrganizationDialog() {
     TextEditingController nameController = TextEditingController();
+    bool isCreating = false;
 
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Create Organization'),
-        content: TextField(
-          controller: nameController,
-          decoration: const InputDecoration(
-            labelText: 'Organization Name',
-            hintText: 'e.g., Liberty Centre AG',
+      builder: (context) => StatefulBuilder(
+        builder: (context, setDialogState) => AlertDialog(
+          title: const Text('Create Organization'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: nameController,
+                decoration: const InputDecoration(
+                  labelText: 'Organization Name',
+                  hintText: 'e.g., Liberty Centre AG',
+                  border: OutlineInputBorder(),
+                ),
+                enabled: !isCreating,
+              ),
+              if (isCreating) ...[
+                const SizedBox(height: 16),
+                const CircularProgressIndicator(),
+                const SizedBox(height: 8),
+                const Text('Creating Organization...'),
+              ],
+            ],
           ),
+          actions: [
+            TextButton(
+              onPressed: isCreating ? null : () => Navigator.pop(context),
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton(
+              onPressed: isCreating
+                  ? null
+                  : () async {
+                      if (nameController.text.trim().isEmpty) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Please enter organization name'),
+                          ),
+                        );
+                        return;
+                      }
+
+                      User? user = FirebaseAuth.instance.currentUser;
+                      if (user == null) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('No user logged in'),
+                          ),
+                        );
+                        return;
+                      }
+
+                      setDialogState(() => isCreating = true);
+
+                      try {
+                        print(
+                            'Creating organization: ${nameController.text.trim()}');
+
+                        String orgId = await _orgService.createOrganization(
+                          nameController.text.trim(),
+                          user.uid,
+                        );
+
+                        print('Organization created with ID: $orgId');
+
+                        await _orgService.setActiveOrganization(
+                            user.uid, orgId);
+
+                        print('Active organization set');
+
+                        if (!context.mounted) return;
+
+                        Navigator.pop(context);
+
+                        await _loadOrganizations();
+
+                        if (!context.mounted) return;
+
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Organization created successfully!'),
+                            backgroundColor: Colors.green,
+                          ),
+                        );
+
+                        // Return success to caller
+                        Navigator.pop(context, true);
+                      } catch (e) {
+                        print('Error creating organization: $e');
+
+                        setDialogState(() => isCreating = false);
+
+                        if (!context.mounted) return;
+
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text('Error: $e'),
+                            backgroundColor: Colors.red,
+                          ),
+                        );
+                      }
+                    },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.green,
+                foregroundColor: Colors.white,
+              ),
+              child: const Text('Create'),
+            ),
+          ],
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton(
-            onPressed: () async {
-              if (nameController.text.trim().isEmpty) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Please enter organization name'),
-                  ),
-                );
-                return;
-              }
-
-              User? user = FirebaseAuth.instance.currentUser;
-              if (user != null) {
-                String orgId = await _orgService.createOrganization(
-                  nameController.text.trim(),
-                  user.uid,
-                );
-
-                if (!mounted) return;
-                Navigator.pop(context);
-                await _orgService.setActiveOrganization(user.uid, orgId);
-                _loadOrganizations();
-                if (!context.mounted) return;
-                Navigator.pop(context, true);
-
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Organization created!'),
-                  ),
-                );
-              }
-            },
-            child: const Text('Create'),
-          ),
-        ],
       ),
     );
   }
 
   void _showJoinOrganizationDialog() {
     TextEditingController codeController = TextEditingController();
+    bool isJoining = false;
 
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Join Organization'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Text('Enter the organization code provided by your admin'),
-            const SizedBox(
-              height: 16,
-            ),
-            TextField(
-              controller: codeController,
-              decoration: const InputDecoration(
-                labelText: 'Organization Code',
-                hintText: 'e.g., ABC12345',
+      builder: (context) => StatefulBuilder(
+        builder: (context, setDialogState) => AlertDialog(
+          title: const Text('Join Organization'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text('Enter the organization code provided by your admin'),
+              const SizedBox(
+                height: 16,
               ),
-              textCapitalization: TextCapitalization.characters,
+              TextField(
+                controller: codeController,
+                decoration: const InputDecoration(
+                  labelText: 'Organization Code',
+                  hintText: 'e.g., ABC12345',
+                  border: OutlineInputBorder(),
+                ),
+                textCapitalization: TextCapitalization.characters,
+                enabled: !isJoining,
+              ),
+              if (isJoining) ...[
+                const SizedBox(height: 16),
+                const CircularProgressIndicator(),
+                const SizedBox(height: 8),
+                const Text('Joining organization...'),
+              ],
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton(
+              onPressed: isJoining
+                  ? null
+                  : () async {
+                      if (codeController.text.trim().isEmpty) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                              content: Text('Please enter organization code')),
+                        );
+                        return;
+                      }
+
+                      User? user = FirebaseAuth.instance.currentUser;
+                      if (user == null) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('No user logged in')),
+                        );
+                        return;
+                      }
+
+                      setDialogState(() => isJoining = true);
+
+                      try {
+                        print(
+                            'Joining organization with code: ${codeController.text.trim()}');
+
+                        bool success = await _orgService.joinOrganization(
+                          codeController.text.trim(),
+                          user.uid,
+                        );
+
+                        print('Join result: $success');
+
+                        if (!context.mounted) return;
+
+                        Navigator.pop(context); // Close dialog
+
+                        if (success) {
+                          await _loadOrganizations();
+
+                          if (!context.mounted) return;
+
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content:
+                                  Text('Joined organization successfully!'),
+                              backgroundColor: Colors.green,
+                            ),
+                          );
+
+                          // Return success to caller
+                          Navigator.pop(context, true);
+                        } else {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('Invalid code or already a member'),
+                              backgroundColor: Colors.orange,
+                            ),
+                          );
+                        }
+                      } catch (e) {
+                        print('Error joining organization: $e');
+
+                        setDialogState(() => isJoining = false);
+
+                        if (!context.mounted) return;
+
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text('Error: $e'),
+                            backgroundColor: Colors.red,
+                          ),
+                        );
+                      }
+                    },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.blue,
+                foregroundColor: Colors.white,
+              ),
+              child: const Text('Join'),
             ),
           ],
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton(
-            onPressed: () async {
-              if (codeController.text.trim().isEmpty) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                      content: Text('Please enter organization code')),
-                );
-                return;
-              }
-
-              User? user = FirebaseAuth.instance.currentUser;
-              if (user != null) {
-                bool success = await _orgService.joinOrganization(
-                  codeController.text.trim(),
-                  user.uid,
-                );
-
-                if (!mounted) return;
-                Navigator.pop(context);
-
-                if (success) {
-                  // Set as active organization
-                  final orgId = await _orgService
-                      .getOrganizationIdByCode(codeController.text.trim());
-                  if (orgId != null) {
-                    await _orgService.setActiveOrganization(
-                      user.uid,
-                      orgId,
-                    );
-                  }
-
-                  _loadOrganizations();
-                  if (!mounted) return;
-                  Navigator.pop(context, true);
-
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Joined organization!'),
-                    ),
-                  );
-                } else {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Invalid code or already a member'),
-                    ),
-                  );
-                }
-              }
-            },
-            child: const Text('Join'),
-          ),
-        ],
       ),
     );
   }

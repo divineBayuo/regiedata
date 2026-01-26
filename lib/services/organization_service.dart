@@ -104,11 +104,12 @@ class OrganizationService {
     required bool isApproved,
     Map<String, dynamic>? personalData,
   }) async {
-    await _firestore.collection('organization_members').add({
+    String membershipId = '${userId}_$organizationId';
+
+    await _firestore.collection('organization_members').doc(membershipId).set({
       'userId': userId,
       'organizationId': organizationId,
       'role': role,
-      'isApproved': isApproved,
       'joinedAt': FieldValue.serverTimestamp(),
       'personalData': personalData ?? {},
     });

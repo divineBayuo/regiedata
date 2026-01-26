@@ -189,17 +189,21 @@ class _SignuppageState extends State<Signuppage> {
       await userCredential.user?.updateDisplayName(displayName);
       await userCredential.user?.reload();
 
+      // Save to firestore
+      await _saveUserToFirestore(userCredential.user!.uid);
+
       // Navigate to organizationn selector
       if (!mounted) return;
       final bool? orgSelected = await Navigator.push(
         context,
         MaterialPageRoute(
-          builder: (context) => OrganizationSelectorScreen(),
+          builder: (context) => const OrganizationSelectorScreen(),
         ),
       );
 
       // If no organization selected, delete auth account
       if (orgSelected != true) {
+        await _firestore.collection('users').doc(userCredential.user!.uid).delete();
         await userCredential.user?.delete();
         if (!mounted) return;
         _showSnackBar('You must join or create an organization');
@@ -303,34 +307,16 @@ class _SignuppageState extends State<Signuppage> {
       UserCredential userCredential =
           await _auth.signInWithCredential(credential);
 
-      // Check if user already has organization membership
-      QuerySnapshot membershipCheck = await _firestore
-          .collection('organization_members')
-          .where('userId', isEqualTo: userCredential.user!.uid)
-          .limit(1)
+      // Check if user has complete profile
+      DocumentSnapshot userDoc = await _firestore
+          .collection('users')
+          .doc(userCredential.user!.uid)
           .get();
 
       if (!mounted) return;
 
-      if (membershipCheck.docs.isEmpty) {
-        // New user - need organization selection
-        final bool? orgSelected = await Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => OrganizationSelectorScreen(),
-          ),
-        );
-
-        if (orgSelected != true) {
-          await userCredential.user?.delete();
-          await _googleSignIn.signOut();
-          if (!mounted) return;
-          _showSnackBar('You must join or create an organization');
-          setState(() => _isLoading = false);
-          return;
-        }
-
-        // Navigate to profile completion
+      if (!userDoc.exists) {
+        // new user: go to profile completion
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(
@@ -342,10 +328,52 @@ class _SignuppageState extends State<Signuppage> {
           ),
         );
       } else {
-        // Existing user
+        // existing user: navigate based on role
         navigateBasedOnRole(context);
       }
 
+      /* // Check if user already has organization membership
+      QuerySnapshot membershipCheck = await _firestore
+          .collection('organization_members')
+          .where('userId', isEqualTo: userCredential.user!.uid)
+          .limit(1)
+          .get();
+
+      bool needSetup = membershipCheck.docs.isEmpty || !userDoc.exists;
+
+      if (needSetup) {
+        if (membershipCheck.docs.isEmpty) {
+          final bool? orgSelected = await Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => const OrganizationSelectorScreen(),
+            ),
+          );
+
+          if (orgSelected != true) {
+            await userCredential.user?.delete();
+            await _googleSignIn.signOut();
+            if (!mounted) return;
+            _showSnackBar('You must create or join an organization');
+            setState(() => _isLoading = false);
+            return;
+          }
+        }
+
+        if (!mounted) return;
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (context) => GoogleProfileCompletionScreen(
+              user: userCredential.user!,
+              email: userCredential.user!.email!,
+              displayName: userCredential.user!.displayName,
+            ),
+          ),
+        );
+      } else {
+        navigateBasedOnRole(context);
+      } */
     } catch (e) {
       if (!mounted) return;
       _showSnackBar('Google sign-up failed: $e');
