@@ -110,6 +110,7 @@ class OrganizationService {
       'userId': userId,
       'organizationId': organizationId,
       'role': role,
+      'isApproved': isApproved,
       'joinedAt': FieldValue.serverTimestamp(),
       'personalData': personalData ?? {},
     });

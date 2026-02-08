@@ -47,8 +47,8 @@ Future<void> navigateBasedOnRole(BuildContext context) async {
 
   Map<String, dynamic> membershipData =
       membershipSnapshot.docs.first.data() as Map<String, dynamic>;
-  String role = membershipData['role'];
-  bool isApproved = membershipData['isApproved'];
+  String role = membershipData['role'] ?? 'user';
+  bool isApproved = membershipData['isApproved'] ?? false;
 
   if (!context.mounted) return;
 

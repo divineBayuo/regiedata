@@ -1,3 +1,4 @@
+import 'dart:math';
 import 'dart:ui' as ui;
 
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -178,8 +179,8 @@ class _AdminDashboardState extends State<AdminDashboard> {
                   child: _buildStatCard(
                     'Total Records',
                     _totalAttendance.toString(),
-                    Icons.check_circle,
-                    Colors.purple,
+                    Icons.numbers_rounded,
+                    Colors.red,
                   ),
                 ),
                 const SizedBox(
@@ -451,258 +452,292 @@ class _AdminDashboardState extends State<AdminDashboard> {
     );
   }
 
-  void _showCreateSessionDialog(BuildContext context) {
-    TextEditingController eventNameController = TextEditingController();
+  void _showCreateSessionDialog(BuildContext parentContext) {
+    final TextEditingController eventNameController = TextEditingController();
+    final GlobalKey qrImageKey = GlobalKey(debugLabel: 'qr_image');
+
     String generatedCode = '';
     String sessionId = '';
-    final GlobalKey qrImageKey = GlobalKey();
+    String eventName = '';
 
     showDialog(
-      context: context,
+      context: parentContext,
       barrierDismissible: false,
-      builder: (context) => StatefulBuilder(
-        builder: (context, setDialogState) => AlertDialog(
-          title: const Text('Create Attendance Code'),
-          content: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                if (generatedCode.isEmpty) ...[
-                  TextField(
-                    controller: eventNameController,
-                    decoration: const InputDecoration(
-                      labelText: 'Event Name',
-                      hintText: 'e.g., Monday Youth Service - Family Wars',
-                      border: OutlineInputBorder(),
-                      prefixIcon: Icon(Icons.event),
-                    ),
-                  ),
-                ] else ...[
-                  // Show generated session details
-                  RepaintBoundary(
-                    key: qrImageKey,
-                    child: Container(
-                      padding: const EdgeInsets.all(24),
-                      color: Colors.white,
-                      child: Column(
-                        children: [
-                          Text(
-                            eventNameController.text,
-                            style: const TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
+      builder: (dialogContext) {
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            return AlertDialog(
+              title: const Text('Create Attendance Code'),
+              content: SizedBox(
+                width: 350,
+                child: SingleChildScrollView(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      if (generatedCode.isEmpty) ...[
+                        TextField(
+                          controller: eventNameController,
+                          decoration: const InputDecoration(
+                            labelText: 'Event Name',
+                            hintText:
+                                'e.g., Monday Youth Service - Family Wars',
+                            border: OutlineInputBorder(),
+                            prefixIcon: Icon(Icons.event),
+                          ),
+                        ),
+                      ] else ...[
+                        // Show generated session details
+                        RepaintBoundary(
+                          key: qrImageKey,
+                          child: Container(
+                            padding: const EdgeInsets.all(24),
+                            color: Colors.white,
+                            child: Column(
+                              children: [
+                                Text(
+                                  eventName,
+                                  style: const TextStyle(
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                                const SizedBox(
+                                  height: 16,
+                                ),
+                                const Text(
+                                  'QR Code',
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                                const SizedBox(
+                                  height: 8,
+                                ),
+                                Container(
+                                  padding: const EdgeInsets.all(16),
+                                  decoration: BoxDecoration(
+                                    color: Colors.white,
+                                    borderRadius: BorderRadius.circular(12),
+                                    border: Border.all(
+                                        color: Colors.green, width: 2),
+                                  ),
+                                  child: QrImageView(
+                                    data: generatedCode,
+                                    version: QrVersions.auto,
+                                    size: 200,
+                                  ),
+                                ),
+                                const SizedBox(
+                                  height: 16,
+                                ),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 24,
+                                    vertical: 12,
+                                  ),
+                                  decoration: BoxDecoration(
+                                      color: Colors.green.shade50,
+                                      borderRadius: BorderRadius.circular(12)),
+                                  child: Text(
+                                    'PIN: $generatedCode',
+                                    style: const TextStyle(
+                                      fontSize: 24,
+                                      fontWeight: FontWeight.bold,
+                                      letterSpacing: 3,
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(
+                                  height: 12,
+                                ),
+                                const Text(
+                                  'Scan QR or enter PIN to mark attendance',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: Colors.grey,
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
-                          const SizedBox(
-                            height: 16,
-                          ),
-                          const Text(
-                            'QR Code',
-                            style: TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                          const SizedBox(
-                            height: 8,
-                          ),
-                          Container(
-                            padding: const EdgeInsets.all(16),
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.circular(12),
-                              border: Border.all(color: Colors.green, width: 2),
-                            ),
-                            child: QrImageView(
-                              data: generatedCode,
-                              version: QrVersions.auto,
-                              size: 200,
-                            ),
-                          ),
-                          const SizedBox(
-                            height: 16,
-                          ),
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 24,
-                              vertical: 12,
-                            ),
-                            decoration: BoxDecoration(
-                                color: Colors.green.shade50,
-                                borderRadius: BorderRadius.circular(12)),
-                            child: Text(
-                              'PIN: $generatedCode',
-                              style: const TextStyle(
-                                fontSize: 24,
-                                fontWeight: FontWeight.bold,
-                                letterSpacing: 3,
+                        ),
+                        const SizedBox(
+                          height: 16,
+                        ),
+                        // Share buttons
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                          children: [
+                            // Copy button
+                            ElevatedButton.icon(
+                              onPressed: () {
+                                Clipboard.setData(
+                                    ClipboardData(text: generatedCode));
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text('PIN copied to clipboard!'),
+                                    duration: Duration(seconds: 2),
+                                  ),
+                                );
+                              },
+                              icon: const Icon(
+                                Icons.copy,
+                                size: 18,
+                              ),
+                              label: const Text('Copy PIN'),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.blue,
+                                foregroundColor: Colors.white,
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 16,
+                                  vertical: 12,
+                                ),
                               ),
                             ),
-                          ),
-                          const SizedBox(
-                            height: 12,
-                          ),
-                          const Text(
-                            'Scan QR or enter PIN to mark attendance',
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: Colors.grey,
+                            // Save/Share QR
+                            ElevatedButton.icon(
+                              onPressed: () async {
+                                await _captureAndShareQR(parentContext,
+                                    qrImageKey, eventName, generatedCode);
+                              },
+                              icon: const Icon(
+                                Icons.share,
+                                size: 18,
+                              ),
+                              label: const Text('Share QR'),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.green,
+                                foregroundColor: Colors.white,
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 16,
+                                  vertical: 12,
+                                ),
+                              ),
                             ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                  const SizedBox(
-                    height: 16,
-                  ),
-                  // Share buttons
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                    children: [
-                      // Copy button
-                      ElevatedButton.icon(
-                        onPressed: () {
-                          Clipboard.setData(ClipboardData(text: generatedCode));
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('PIN copied to clipboard!'),
-                              duration: Duration(seconds: 2),
-                            ),
-                          );
-                        },
-                        icon: const Icon(
-                          Icons.copy,
-                          size: 18,
-                        ),
-                        label: const Text('Copy PIN'),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.blue,
-                          foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 16,
-                            vertical: 12,
-                          ),
-                        ),
-                      ),
-                      // Save/Share QR
-                      ElevatedButton.icon(
-                        onPressed: () async {
-                          await _captureAndShareQR(context, qrImageKey,
-                              eventNameController.text, generatedCode);
-                        },
-                        icon: const Icon(
-                          Icons.share,
-                          size: 18,
-                        ),
-                        label: const Text('Share QR'),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.green,
-                          foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 16,
-                            vertical: 12,
-                          ),
-                        ),
-                      ),
+                          ],
+                        )
+                      ]
                     ],
-                  )
-                ]
+                  ),
+                ),
+              ),
+              actions: [
+                if (generatedCode.isEmpty) ...[
+                  TextButton(
+                    onPressed: () => Navigator.pop(dialogContext),
+                    child: const Text('Cancel'),
+                  ),
+                  ElevatedButton(
+                    onPressed: () async {
+                      final name = eventNameController.text.trim();
+                      if (name.isEmpty) {
+                        ScaffoldMessenger.of(parentContext).showSnackBar(
+                          const SnackBar(
+                            content: Text('Please enter event name'),
+                          ),
+                        );
+                        return;
+                      }
+
+                      final orgId =
+                          await OrganizationContext.getCurrentOrganizationId();
+                      if (orgId == null) {
+                        ScaffoldMessenger.of(parentContext).showSnackBar(
+                          const SnackBar(
+                              content: Text('No organization selected')),
+                        );
+                        return;
+                      }
+
+                      // Generate unique code
+                      final code =
+                          (Random().nextInt(900000) + 100000).toString();
+
+                      // Save to Firestore
+                      final docRef = await _firestore
+                          .collection('attendance_sessions')
+                          .add({
+                        'code': code,
+                        'eventName': name,
+                        'createdAt': FieldValue.serverTimestamp(),
+                        'createdBy': FirebaseAuth.instance.currentUser?.uid,
+                        'active': true,
+                        'organizationId': orgId,
+                      });
+
+                      /* if (!context.mounted) return; */
+
+                      setDialogState(() {
+                        generatedCode = code;
+                        sessionId = docRef.id;
+                        eventName = name;
+                      });
+
+                      // Refresh stats
+                      /* _loadStats(); */
+                    },
+                    child: const Text('Generate'),
+                  ),
+                ] else ...[
+                  TextButton(
+                    onPressed: () async {
+                      //Deactivate the session
+                      await _firestore
+                          .collection('attendance_sessions')
+                          .doc(sessionId)
+                          .update({'active': false});
+
+                      if (!parentContext.mounted) return;
+                      Navigator.pop(dialogContext);
+                      ScaffoldMessenger.of(parentContext).showSnackBar(
+                        const SnackBar(
+                          content: Text('Session closed'),
+                          backgroundColor: Colors.orange,
+                        ),
+                      );
+                      if (mounted) {
+                        setState(
+                          () {},
+                        );
+                        _loadStats();
+                      }
+                    },
+                    child: const Text('Close Session'),
+                  ),
+                  ElevatedButton(
+                    onPressed: () {
+                      Navigator.pop(dialogContext);
+                      // Refresh stats when dialog closes
+                      if (mounted) {
+                        setState(() {});
+                        _loadStats();
+                      }
+                    },
+                    child: const Text('Done'),
+                  ),
+                ],
               ],
-            ),
-          ),
-          actions: [
-            if (generatedCode.isEmpty) ...[
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: const Text('Cancel'),
-              ),
-              ElevatedButton(
-                onPressed: () async {
-                  if (eventNameController.text.trim().isEmpty) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Please enter event name'),
-                      ),
-                    );
-                    return;
-                  }
-
-                  String? orgId =
-                      await OrganizationContext.getCurrentOrganizationId();
-                  if (orgId == null) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('No organization selected')),
-                    );
-                    return;
-                  }
-
-                  // Generate unique code
-                  String code = DateTime.now()
-                      .millisecondsSinceEpoch
-                      .toString()
-                      .substring(6);
-
-                  // Save to Firestore
-                  DocumentReference docRef =
-                      await _firestore.collection('attendance_sessions').add({
-                    'code': code,
-                    'eventName': eventNameController.text.trim(),
-                    'createdAt': FieldValue.serverTimestamp(),
-                    'createdBy': FirebaseAuth.instance.currentUser?.uid,
-                    'active': true,
-                    'organizationId': orgId,
-                  });
-
-                  setDialogState(() {
-                    generatedCode = code;
-                    sessionId = docRef.id;
-                  });
-
-                  // Refresh stats
-                  _loadStats();
-                },
-                child: const Text('Generate'),
-              ),
-            ] else ...[
-              TextButton(
-                onPressed: () async {
-                  //Deactivate the session
-                  await _firestore
-                      .collection('attendance_sessions')
-                      .doc(sessionId)
-                      .update({'active': false});
-
-                  if (!context.mounted) return;
-                  Navigator.pop(context);
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Session closed'),
-                      backgroundColor: Colors.orange,
-                    ),
-                  );
-                  _loadStats();
-                },
-                child: const Text('Close Session'),
-              ),
-              ElevatedButton(
-                onPressed: () {
-                  Navigator.pop(context);
-                },
-                child: const Text('Done'),
-              ),
-            ],
-          ],
-        ),
-      ),
-    );
+            );
+          },
+        );
+      },
+    ).then((_) {
+      eventNameController.dispose();
+      // ALways refresh stats when dialog closes
+      if (mounted) {
+        setState(() {});
+        _loadStats();
+      }
+    });
   }
 
   Future<void> _captureAndShareQR(BuildContext context, GlobalKey qrKey,
       String eventName, String code) async {
     try {
+      if (qrKey.currentContext == null) return;
       // Find render object
-      RenderRepaintBoundary boundary =
+      final boundary =
           qrKey.currentContext!.findRenderObject() as RenderRepaintBoundary;
 
       // Capture the image
@@ -747,6 +782,31 @@ class _AdminDashboardState extends State<AdminDashboard> {
                 .orderBy('createdAt', descending: true)
                 .snapshots(),
             builder: (context, snapshot) {
+              if (snapshot.hasError) {
+                print(snapshot.error);
+              }
+              if (snapshot.hasError) {
+                return Center(
+                    child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(
+                      Icons.error_outline,
+                      size: 80,
+                      color: Colors.red,
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      'Error: ${snapshot.error}',
+                      style: const TextStyle(
+                        fontSize: 16,
+                        color: Colors.red,
+                      ),
+                      textAlign: TextAlign.center,
+                    )
+                  ],
+                ));
+              }
               if (snapshot.connectionState == ConnectionState.waiting) {
                 return const Center(
                   child: CircularProgressIndicator(),
@@ -777,8 +837,9 @@ class _AdminDashboardState extends State<AdminDashboard> {
                   ),
                 );
               }
-
+              
               return ListView.builder(
+                itemCount: snapshot.data!.docs.length,
                 itemBuilder: (context, index) {
                   var doc = snapshot.data!.docs[index];
                   var data = doc.data() as Map<String, dynamic>;
@@ -913,6 +974,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
 
   void _showSessionHistoryScreen(BuildContext context) async {
     String? orgId = await OrganizationContext.getCurrentOrganizationId();
+    print('DEBUG: Current Org ID: $orgId');
     if (orgId == null) return;
 
     Navigator.push(
@@ -931,6 +993,9 @@ class _AdminDashboardState extends State<AdminDashboard> {
                 .orderBy('createdAt', descending: true)
                 .snapshots(),
             builder: (context, snapshot) {
+              print('DEBUG: Connection state: ${snapshot.connectionState}');
+              print('DEBUG: Has data: ${snapshot.hasData}');
+              print('DEBUG: Doc count: ${snapshot.data?.docs.length}');
               if (snapshot.connectionState == ConnectionState.waiting) {
                 return const Center(
                   child: CircularProgressIndicator(),
@@ -938,6 +1003,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
               }
 
               if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+                print('DEBUG: Error: ${snapshot.error}');
                 return const Center(
                   child: Text('No Sessions Found'),
                 );
