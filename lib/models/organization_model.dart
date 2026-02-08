@@ -1,3 +1,5 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+
 class OrganizationModel {
   final String id;
   final String name;
@@ -31,8 +33,20 @@ class OrganizationModel {
       name: map['name'] ?? '',
       code: map['code'] ?? '',
       createdBy: map['createdBy'] ?? '',
-      createdAt: DateTime.parse(map['createdAt']),
+      createdAt: _parseDateTime(map['createdAt']),
       settings: map['settings'],
     );
+  }
+
+  static DateTime _parseDateTime(dynamic value){
+    if (value == null) {
+      return DateTime.now();
+    } else if (value is Timestamp) {
+      return value.toDate();
+    } else if (value is String) {
+      return DateTime.parse(value);
+    } else {
+      return DateTime.now();
+    }
   }
 }
