@@ -1,19 +1,26 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:regie_data/screens/splashscreen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
+  try {
+    await dotenv.load(fileName: ".env");
+  } catch (e) {
+    print('Error loading .env file: $e');
+  }
+
   await Firebase.initializeApp(
-      options: const FirebaseOptions(
-    apiKey: "AIzaSyCiLkb71aJXWPyiOWwWni0qrZHaa40nHcI",
-    authDomain: "regie-4c78a.firebaseapp.com",
-    projectId: "regie-4c78a",
-    storageBucket: "regie-4c78a.firebasestorage.app",
-    messagingSenderId: "674155089068",
-    appId: "1:674155089068:web:b9e7615c2228e675e1a309",
-    measurementId: "G-KT8ZCZZ0X0",
+      options: FirebaseOptions(
+    apiKey: dotenv.env['FIREBASE_API_KEY']!,
+    authDomain: dotenv.env['FIREBASE_AUTH_DOMAIN']!,
+    projectId: dotenv.env['FIREBASE_PROJECT_ID']!,
+    storageBucket: dotenv.env['FIREBASE_STORAGEBUCKET']!,
+    messagingSenderId: dotenv.env['FIREBASE_MESSAGING_SENDER_ID']!,
+    appId: dotenv.env['FIREBASE_API_APPID']!,
+    measurementId: dotenv.env['FIREBASE_MEASUREMENT_ID']!,
   ));
 
   runApp(const MyApp());

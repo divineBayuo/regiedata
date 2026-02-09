@@ -48,6 +48,7 @@ dependencies:
   mobile_scanner: ^7.1.4
   screenshot: ^3.0.0
   share_plus: ^12.0.1
+  flutter_dotenv: ^6.0.0
 
 dev_dependencies:
   flutter_test:
@@ -96,6 +97,7 @@ flutter:
     - assets/onboarding_tracking.json
     - assets/onboarding_analysis.json
     - assets/icon/google_logo.png
+    - .env
   #   - images/a_dot_ham.jpeg
 
   # An image asset can refer to one or more resolution-specific "variants", see
