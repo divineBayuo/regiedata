@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:regie_data/helper_functions/role_navigation.dart';
 import 'package:regie_data/screens/google_profile_completion_screen.dart';
@@ -57,9 +58,8 @@ class _SignuppageState extends State<Signuppage> {
   bool _isLoading = false;
 
   final FirebaseAuth _auth = FirebaseAuth.instance;
-  final GoogleSignIn _googleSignIn = GoogleSignIn(
-      clientId:
-          '674155089068-bmhg625i9o99aq2caduqbudp6ugbabdg.apps.googleusercontent.com');
+  final GoogleSignIn _googleSignIn =
+      GoogleSignIn(clientId: dotenv.env['FIREBASE_CLIENT_ID']);
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
   // email validation regex
@@ -203,7 +203,10 @@ class _SignuppageState extends State<Signuppage> {
 
       // If no organization selected, delete auth account
       if (orgSelected != true) {
-        await _firestore.collection('users').doc(userCredential.user!.uid).delete();
+        await _firestore
+            .collection('users')
+            .doc(userCredential.user!.uid)
+            .delete();
         await userCredential.user?.delete();
         if (!mounted) return;
         _showSnackBar('You must join or create an organization');

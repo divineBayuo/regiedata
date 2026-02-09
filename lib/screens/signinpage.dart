@@ -5,6 +5,7 @@ import 'package:google_sign_in/google_sign_in.dart';
 import 'package:regie_data/helper_functions/role_navigation.dart';
 import 'package:regie_data/screens/signuppage.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 class Signinpage extends StatefulWidget {
   const Signinpage({super.key});
@@ -23,8 +24,8 @@ class _SigninpageState extends State<Signinpage> {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final GoogleSignIn _googleSignIn = GoogleSignIn(
-      clientId:
-          '674155089068-bmhg625i9o99aq2caduqbudp6ugbabdg.apps.googleusercontent.com');
+      clientId: dotenv
+          .env['FIREBASE_CLIENT_ID']); // Use the client ID from your .env file
 
   @override
   void initState() {
