@@ -49,22 +49,22 @@ class _SplashscreenState extends State<Splashscreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.green,
+      backgroundColor: const Color(0xff0d8c01),
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Container(
-              width: 80,
-              height: 80,
+              width: 140,
+              height: 140,
               decoration: BoxDecoration(
                 color: Colors.green,
                 borderRadius: BorderRadius.circular(20),
               ),
               child: Image.asset(
-                'assets/images/logo.png',
-                width: 48,
-                height: 48,
+                'assets/images/regie_splash.png',
+                width: 90,
+                height: 90,
               ),
             ),
             const SizedBox(height: 20),
@@ -77,9 +77,9 @@ class _SplashscreenState extends State<Splashscreen> {
               ),
             ),
             const SizedBox(height: 8),
-            Text(
+            const Text(
               'Attendance & Data Management',
-              style: TextStyle(fontSize: 14, color: Colors.grey.shade600),
+              style: TextStyle(fontSize: 14, color: Colors.white60),
             ),
             const SizedBox(height: 48),
             const CircularProgressIndicator(color: Colors.white)
