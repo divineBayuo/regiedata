@@ -16,6 +16,7 @@ class OrganizationService {
   }
 
   // Create new organization; returns the new org's id
+  // Creator automatically approved as admin
   Future<String> createOrganization(String name, String createdBy) async {
     String code = _generateOrgCode();
 
@@ -34,6 +35,7 @@ class OrganizationService {
     });
 
     // Add creator as admin
+    // No approval - first admin
     await addMemberToOrganization(
       userId: createdBy,
       organizationId: orgRef.id,
@@ -53,7 +55,9 @@ class OrganizationService {
     return snapshot.docs.isNotEmpty;
   }
 
-  // Join organization with code; default = user
+  // Join organization with code
+  // Joining as user - auto approved
+  // Joining as admin - needs approval
   Future<bool> joinOrganization(String code, String userId,
       {String role = 'user'}) async {
     try {
@@ -81,7 +85,8 @@ class OrganizationService {
         return false; // Already a member
       }
 
-      // Add as member
+      // Add as member with appropriate approval status
+      // Users are auto-approved, admins need approval from existing admins
       await addMemberToOrganization(
         userId: userId,
         organizationId: organizationId,
@@ -201,7 +206,7 @@ class OrganizationService {
     return snapshot.docs.first.id;
   }
 
-  // promote pending admin to admin
+  // promote pending admin to approved admin
   Future<void> approveAdmin(String membershipId) async {
     await _firestore
         .collection('organization_members')
