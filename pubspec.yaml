@@ -97,6 +97,7 @@ flutter:
     - assets/onboarding_tracking.json
     - assets/onboarding_analysis.json
     - assets/icon/google_logo.png
+    - assets/icon/regie_icon.png
     - .env
   #   - images/a_dot_ham.jpeg
 
