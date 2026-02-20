@@ -25,28 +25,27 @@ class _OrganizationSelectorScreenState
 
   Future<void> _loadOrganizations() async {
     User? user = FirebaseAuth.instance.currentUser;
-    if (user != null) {
-      try {
-        List<OrganizationModel> orgs =
-            await _orgService.getUserOrganizations(user.uid);
-        setState(
-          () {
-            _organizations = orgs;
-            _isLoading = false;
-          },
-        );
-      } catch (e) {
-        print('Error loading organizations: $e');
-        setState(() {
+    if (user == null) {
+      setState(() => _isLoading = false);
+      return;
+    }
+    try {
+      final orgs = await _orgService.getUserOrganizations(user.uid);
+      setState(
+        () {
+          _organizations = orgs;
           _isLoading = false;
-        });
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Error loading organizations: $e'),
-            ),
-          );
-        }
+        },
+      );
+    } catch (e) {
+      print('Error loading organizations: $e');
+      setState(() => _isLoading = false);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error loading organizations: $e'),
+          ),
+        );
       }
     }
   }
@@ -74,17 +73,15 @@ class _OrganizationSelectorScreenState
             icon: const Icon(Icons.add),
             label: const Text('Create'),
             backgroundColor: Colors.green,
-            heroTag: 'Create',
+            heroTag: 'create',
           ),
-          const SizedBox(
-            height: 12,
-          ),
+          const SizedBox(height: 12),
           FloatingActionButton.extended(
             onPressed: _showJoinOrganizationDialog,
             icon: const Icon(Icons.login),
             label: const Text('Join'),
             backgroundColor: Colors.blue,
-            heroTag: 'Join',
+            heroTag: 'join',
           ),
         ],
       ),
@@ -101,19 +98,15 @@ class _OrganizationSelectorScreenState
             size: 80,
             color: Colors.grey.shade400,
           ),
-          const SizedBox(
-            height: 16,
-          ),
+          const SizedBox(height: 16),
           const Text(
-            'No Organization',
+            'No Organization Yet',
             style: TextStyle(
               fontSize: 20,
               fontWeight: FontWeight.bold,
             ),
           ),
-          const SizedBox(
-            height: 8,
-          ),
+          const SizedBox(height: 8),
           Text(
             'Create a new organization or join an existing one',
             style: TextStyle(
@@ -138,29 +131,28 @@ class _OrganizationSelectorScreenState
             leading: CircleAvatar(
               backgroundColor: Colors.green,
               child: Text(
-                org.name[0].toUpperCase(),
+                org.name.isNotEmpty ? org.name[0].toUpperCase() : '0',
                 style: const TextStyle(color: Colors.white),
               ),
             ),
             title: Text(org.name),
             subtitle: Text('Code: ${org.code}'),
-            trailing: const Icon(Icons.arrow_forward_ios),
+            trailing: const Icon(Icons.arrow_forward_ios, size: 16),
             onTap: () async {
               User? user = FirebaseAuth.instance.currentUser;
-              if (user != null) {
-                try {
-                  await _orgService.setActiveOrganization(user.uid, org.id);
-                  if (!mounted) return;
-                  Navigator.pop(context, true);
-                } catch (e) {
-                  print('Error setting active organization: $e');
-                  if (!mounted) return;
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text('Error: $e'),
-                    ),
-                  );
-                }
+              if (user == null) return;
+              try {
+                await _orgService.setActiveOrganization(user.uid, org.id);
+                if (!mounted) return;
+                Navigator.pop(context, true);
+              } catch (e) {
+                print('Error setting active organization: $e');
+                if (!mounted) return;
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('Error: $e'),
+                  ),
+                );
               }
             },
           ),
@@ -170,7 +162,7 @@ class _OrganizationSelectorScreenState
   }
 
   void _showCreateOrganizationDialog() {
-    TextEditingController nameController = TextEditingController();
+    final nameController = TextEditingController();
     bool isCreating = false;
 
     showDialog(
@@ -232,7 +224,7 @@ class _OrganizationSelectorScreenState
                         print(
                             'Creating organization: ${nameController.text.trim()}');
 
-                        String orgId = await _orgService.createOrganization(
+                        final orgId = await _orgService.createOrganization(
                           nameController.text.trim(),
                           user.uid,
                         );
@@ -289,7 +281,7 @@ class _OrganizationSelectorScreenState
   }
 
   void _showJoinOrganizationDialog() {
-    TextEditingController codeController = TextEditingController();
+    final codeController = TextEditingController();
     bool isJoining = false;
 
     showDialog(
@@ -301,9 +293,7 @@ class _OrganizationSelectorScreenState
             mainAxisSize: MainAxisSize.min,
             children: [
               const Text('Enter the organization code provided by your admin'),
-              const SizedBox(
-                height: 16,
-              ),
+              const SizedBox(height: 16),
               TextField(
                 controller: codeController,
                 decoration: const InputDecoration(
@@ -353,7 +343,7 @@ class _OrganizationSelectorScreenState
                         print(
                             'Joining organization with code: ${codeController.text.trim()}');
 
-                        bool success = await _orgService.joinOrganization(
+                        final success = await _orgService.joinOrganization(
                           codeController.text.trim(),
                           user.uid,
                         );

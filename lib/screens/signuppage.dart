@@ -26,7 +26,7 @@ class _SignuppageState extends State<Signuppage> {
   String? _selectedGender;
   DateTime? _selectedDateOfBirth;
 
-  // Church information
+  // Organization information
   final TextEditingController _familyController = TextEditingController();
   final TextEditingController _departmentController = TextEditingController();
 
@@ -70,7 +70,30 @@ class _SignuppageState extends State<Signuppage> {
   final RegExp _passwordRegex = RegExp(
       r'^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$');
 
-  Future<void> _selectDate(BuildContext context) async {
+  @override
+  void dispose() {
+    for (final ctrl in [
+      _surnameController,
+      _firstnameController,
+      _othernameController,
+      _familyController,
+      _departmentController,
+      _phonenumberController,
+      _residenceController,
+      _occupationController,
+      _placeofworkController,
+      _placeofschoolController,
+      _courseofstudyController,
+      _emailController,
+      _passwordController,
+      _confirmpasswordController
+    ]) {
+      ctrl.dispose();
+    }
+    super.dispose();
+  }
+
+  Future<void> _selectDate() async {
     final DateTime? picked = await showDatePicker(
       context: context,
       initialDate: DateTime(2000),
@@ -93,88 +116,57 @@ class _SignuppageState extends State<Signuppage> {
     }
   }
 
-  bool _validateEmail(String email) {
-    return _emailRegex.hasMatch(email);
-  }
-
-  bool _validatePassword(String password) {
-    return _passwordRegex.hasMatch(password);
-  }
-
-  bool _validatePhoneNumber(String phone) {
-    // Remove spaces and dashes
-    String cleanPhone = phone.replaceAll(RegExp(r'[\s-]'), '');
-    // check if exactly 10 digits
-    return cleanPhone.length == 10 && RegExp(r'^\d{10}$').hasMatch(cleanPhone);
+  bool _validate() {
+    if (_firstnameController.text.trim().isEmpty || _surnameController.text.trim().isEmpty) {
+      _showSnackBar('Please enter your first name and surname.');
+      return false;
+    }
+    if (_selectedGender == null) {
+      _showSnackBar('Please select your gender.');
+      return false;
+    }
+    if (_selectedDateOfBirth == null) {
+      _showSnackBar('Please select your date of birth.');
+      return false;
+    }
+    final phone = _phonenumberController.text.trim().replaceAll(RegExp(r'[-\s]'), '');
+    if (phone.isEmpty) {
+      _showSnackBar('Please enter your phone number.');
+      return false;
+    }
+    if (phone.length != 10 || !RegExp(r'^\d{10}$').hasMatch(phone)) {
+      _showSnackBar('Phone number must be exactly 10 digits.');
+      return false;
+    }
+    if (_emailController.text.trim().isEmpty) {
+      _showSnackBar('Please enter your email address.');
+      return false;
+    }
+    if (!_emailRegex.hasMatch(_emailController.text.trim())) {
+      _showSnackBar('Please enter a valid email address.');
+      return false;
+    }
+    if (!_passwordRegex.hasMatch(_passwordController.text)) {
+      _showSnackBar('Password must be 8+ chars with upper, lower, number & special char.');
+      return false;
+    }
+    if (_passwordController.text != _confirmpasswordController.text) {
+      _showSnackBar('Passwords do not match.');
+      return false;
+    }
+    if (isWorking && _placeofworkController.text.trim().isEmpty) {
+      _showSnackBar('Please enter your place of work.');
+      return false;
+    }
+    if (isSchooling && _placeofschoolController.text.trim().isEmpty) {
+      _showSnackBar('Please enter your place of school.');
+      return false;
+    }
+    return true;
   }
 
   Future<void> _signUpWithEmail() async {
-    // Validation
-    if (_firstnameController.text.trim().isEmpty ||
-        _surnameController.text.trim().isEmpty) {
-      _showSnackBar('PLease enter your first Name and surname.');
-      return;
-    }
-
-    if (_emailController.text.trim().isEmpty) {
-      _showSnackBar('Please enter your email address.');
-      return;
-    }
-
-    if (_selectedGender == null) {
-      _showSnackBar('Please select your gender');
-      return;
-    }
-
-    if (_selectedDateOfBirth == null) {
-      _showSnackBar('Please select your date of birth');
-      return;
-    }
-
-    if (_phonenumberController.text.trim().isEmpty) {
-      _showSnackBar('Please enter your phone number');
-      return;
-    }
-
-    if (!_validatePhoneNumber(_phonenumberController.text.trim())) {
-      _showSnackBar('Phone number must be exactly 10 digits.');
-      return;
-    }
-
-    if (_emailController.text.trim().isEmpty) {
-      _showSnackBar('Please enter your email address.');
-      return;
-    }
-
-    if (!_validateEmail(_emailController.text.trim())) {
-      _showSnackBar('Please enter a valid email address.');
-      return;
-    }
-
-    if (!_validatePassword(_passwordController.text)) {
-      _showSnackBar('Password must be at least 8 characters and include:\n'
-          '- Uppercase letter (A-Z)\n'
-          '- Lowercase letter (a-z)\n'
-          '- Number (0-9\n'
-          '- Special character (@\$!%*?&)');
-      return;
-    }
-
-    if (_passwordController.text != _confirmpasswordController.text) {
-      _showSnackBar('Passwords do not match.');
-      return;
-    }
-
-    if (isWorking && _placeofworkController.text.trim().isEmpty) {
-      _showSnackBar('Please enter your place of work.');
-      return;
-    }
-
-    if (isSchooling && _placeofschoolController.text.trim().isEmpty) {
-      _showSnackBar('Please enter your place of school.');
-      return;
-    }
-
+    if (!_validate()) return;
     setState(() => _isLoading = true);
 
     try {
@@ -392,7 +384,7 @@ class _SignuppageState extends State<Signuppage> {
   }
 
   @override
-  void dispose() {
+  /* void dispose() {
     _surnameController.dispose();
     _firstnameController.dispose();
     _othernameController.dispose();
@@ -409,7 +401,7 @@ class _SignuppageState extends State<Signuppage> {
     _confirmpasswordController.dispose();
     super.dispose();
   }
-
+ */
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -477,7 +469,7 @@ class _SignuppageState extends State<Signuppage> {
                           RadioListTile<String>(
                             title: const Text('Admin'),
                             subtitle: const Text(
-                                'Create attendance codes, analyze all data. (Requires approval)'),
+                                'Create attendance codes, analyze all data (Requires approval)'),
                             value: 'admin',
                             groupValue: _selectedRole,
                             activeColor: Colors.green,
@@ -592,10 +584,10 @@ class _SignuppageState extends State<Signuppage> {
                               height: 6,
                             ),
                             InkWell(
-                              onTap: () => _selectDate(context),
+                              onTap: () => _selectDate(),
                               child: Container(
                                 padding: const EdgeInsets.symmetric(
-                                    horizontal: 20, vertical: 20),
+                                    horizontal: 16, vertical: 18),
                                 decoration: BoxDecoration(
                                   borderRadius: BorderRadius.circular(12),
                                   border: Border.all(
@@ -717,8 +709,8 @@ class _SignuppageState extends State<Signuppage> {
                       height: 20,
                     ),
 
-                    // Church Info
-                    _buildSectionHeader('Church Information'),
+                    // Organization Info
+                    _buildSectionHeader('Organization Information'),
                     const SizedBox(
                       height: 16,
                     ),
@@ -764,13 +756,13 @@ class _SignuppageState extends State<Signuppage> {
                         isRequired: true),
 
                     const SizedBox(
-                      height: 30,
+                      height: 24,
                     ),
 
                     // Create-account button
                     Container(
                       width: double.infinity,
-                      height: 65,
+                      height: 56,
                       decoration: BoxDecoration(
                           borderRadius: BorderRadius.circular(12),
                           gradient: const LinearGradient(
@@ -824,7 +816,7 @@ class _SignuppageState extends State<Signuppage> {
                     Container(
                       width: double.infinity,
                       padding: const EdgeInsets.symmetric(horizontal: 16),
-                      height: 65,
+                      height: 56,
                       decoration: BoxDecoration(
                           borderRadius: BorderRadius.circular(12),
                           color: Colors.white,

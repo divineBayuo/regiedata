@@ -23,7 +23,7 @@ class UserModel {
   UserModel({
     required this.uid,
     required this.email,
-    required this. firstname,
+    required this.firstname,
     required this.surname,
     this.othername,
     required this.gender,
@@ -44,7 +44,7 @@ class UserModel {
   });
 
   Map<String, dynamic> toMap() {
-    return{
+    return {
       'uid': uid,
       'email': email,
       'firstname': firstname,
@@ -68,16 +68,18 @@ class UserModel {
     };
   }
 
-  factory UserModel.fromMap(Map<String, dynamic> map){
+  factory UserModel.fromMap(Map<String, dynamic> map) {
     return UserModel(
       uid: map['uid'] ?? '',
       email: map['email'] ?? '',
-      firstname: map['firstname'] ?? '',
+      firstname: map['firstname'] ?? map['firstName'] ?? '',
       surname: map['surname'] ?? '',
-      othername: map['othername'],
+      othername: map['othername'] ?? map['otherName'],
       gender: map['gender'] ?? '',
-      dateOfBirth: map['dateOfBirth'] != null ? DateTime.parse(map['dateOfBirth']) : DateTime.now(),
-      phoneNumber: map['phoneNumber'] ?? '',
+      dateOfBirth: map['dateOfBirth'] != null
+          ? DateTime.tryParse(map['dateOfBirth']) ?? DateTime.now()
+          : DateTime.now(),
+      phoneNumber: map['phoneNumber'] ?? map['phone_number'] ?? '',
       residence: map['residence'],
       occupation: map['occupation'],
       isWorking: map['isWorking'] ?? false,
@@ -88,8 +90,51 @@ class UserModel {
       family: map['family'],
       department: map['department'],
       role: map['role'] ?? 'user',
-      isApproved: map['isApproved'] ??false,
-      createdAt: DateTime.parse(map['createdAt'])
+      isApproved: map['isApproved'] ?? false,
+      createdAt: map['createdAt'] != null
+          ? DateTime.tryParse(map['createdAt']) ?? DateTime.now()
+          : DateTime.now(),
+    );
+  }
+
+  UserModel copyWith({
+    String? firstname,
+    String? surname,
+    String? othername,
+    String? gender,
+    DateTime? dateOfBirth,
+    String? phoneNumber,  
+    String? residence,
+    String? occupation,
+    bool? isWorking,
+    bool? isSchooling,
+    String? placeOfWork,
+    String? placeOfSchool,
+    String? courseOfStudy,
+    String? family,
+    String? department,
+  }) {
+    return UserModel(
+      uid: uid,
+      email: email,
+      firstname: firstname ?? this.firstname,
+      surname: surname ?? this.surname,
+      othername: othername ?? this.othername,
+      gender: gender ?? this.gender,
+      dateOfBirth: dateOfBirth ?? this.dateOfBirth,
+      phoneNumber: phoneNumber ?? this.phoneNumber,
+      residence: residence ?? this.residence,
+      occupation: occupation ?? this.occupation,
+      isWorking: isWorking ?? this.isWorking,
+      isSchooling: isSchooling ?? this.isSchooling,
+      placeOfWork: placeOfWork ?? this.placeOfWork,
+      placeOfSchool: placeOfSchool ?? this.placeOfSchool,
+      courseOfStudy: courseOfStudy ?? this.courseOfStudy,
+      family: family ?? this.family,
+      department: department ?? this.department,
+      role: role, // Keep the original role value
+      isApproved: isApproved, // Keep the original approval status
+      createdAt: createdAt, // Keep the original creation time
     );
   }
 }

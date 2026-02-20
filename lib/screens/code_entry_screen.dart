@@ -18,7 +18,7 @@ class _CodeEntryScreenState extends State<CodeEntryScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Mark Attendance'),
+        title: const Text('Enter Attendance Code'),
         backgroundColor: Colors.green,
         foregroundColor: Colors.white,
       ),
@@ -32,30 +32,24 @@ class _CodeEntryScreenState extends State<CodeEntryScreen> {
               size: 80,
               color: Colors.grey.shade400,
             ),
-            const SizedBox(
-              height: 24,
-            ),
+            const SizedBox(height: 24),
             Text(
-              'Enter Attendance Code',
+              'Enter Session Code',
               style: TextStyle(
                   fontSize: 24,
                   fontWeight: FontWeight.bold,
-                  color: Colors.grey.shade100),
+                  color: Colors.grey.shade800),
             ),
-            const SizedBox(
-              height: 8,
-            ),
+            const SizedBox(height: 8),
             Text(
-              'Enter the code provided by your admin.',
+              'Enter the 6-digit PIN provided by your admin.',
               style: TextStyle(
                 fontSize: 14,
                 color: Colors.grey.shade600,
               ),
               textAlign: TextAlign.center,
             ),
-            const SizedBox(
-              height: 32,
-            ),
+            const SizedBox(height: 32),
             TextField(
               controller: _codeController,
               decoration: InputDecoration(
@@ -86,6 +80,7 @@ class _CodeEntryScreenState extends State<CodeEntryScreen> {
               keyboardType: TextInputType.number,
               textCapitalization: TextCapitalization.characters,
               maxLength: 10,
+              onSubmitted: (value) => _submitCode(),
               onChanged: (value) {
                 _codeController.value = TextEditingValue(
                   text: value.toUpperCase(),
@@ -93,16 +88,15 @@ class _CodeEntryScreenState extends State<CodeEntryScreen> {
                 );
               },
             ),
-            const SizedBox(
-              height: 32,
-            ),
+            const SizedBox(height: 24),
             SizedBox(
               width: double.infinity,
-              height: 65,
+              height: 56,
               child: ElevatedButton(
                 onPressed: _isLoading ? null : _submitCode,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.green,
+                  foregroundColor: Colors.white,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),
@@ -112,7 +106,7 @@ class _CodeEntryScreenState extends State<CodeEntryScreen> {
                         color: Colors.white,
                       )
                     : const Text(
-                        'Submit',
+                        'Mark Attendance',
                         style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.w600,
@@ -128,7 +122,7 @@ class _CodeEntryScreenState extends State<CodeEntryScreen> {
   }
 
   Future<void> _submitCode() async {
-    String code = _codeController.text.trim();
+    final code = _codeController.text.trim();
 
     if (code.isEmpty) {
       _showSnackBar('Please enter a code');
@@ -146,7 +140,7 @@ class _CodeEntryScreenState extends State<CodeEntryScreen> {
         return;
       }
 
-      // Verify code exists and belongs to user's organization in Firestore
+      // Find an active session with this code in this org
       QuerySnapshot sessionQuery = await FirebaseFirestore.instance
           .collection('attendance_sessions')
           .where('code', isEqualTo: code)
@@ -162,8 +156,9 @@ class _CodeEntryScreenState extends State<CodeEntryScreen> {
       }
 
       // Get session data
-      var sessionData = sessionQuery.docs.first.data() as Map<String, dynamic>;
-      String eventName = sessionData['eventName'] ?? 'Attendance';
+      final sessionData =
+          sessionQuery.docs.first.data() as Map<String, dynamic>;
+      final eventName = sessionData['eventName'] ?? 'Attendance';
 
       // Check if user already marked attendance for this session
       User? user = FirebaseAuth.instance.currentUser;
@@ -183,9 +178,7 @@ class _CodeEntryScreenState extends State<CodeEntryScreen> {
 
       if (existingAttendance.docs.isNotEmpty) {
         _showSnackBar('You have already submitted attendance for this event');
-        setState(
-          () => _isLoading = false,
-        );
+        setState(() => _isLoading = false);
         return;
       }
 
@@ -219,9 +212,7 @@ class _CodeEntryScreenState extends State<CodeEntryScreen> {
 
   void _showSnackBar(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-      ),
+      SnackBar(content: Text(message)),
     );
   }
 

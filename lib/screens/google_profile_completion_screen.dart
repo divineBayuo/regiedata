@@ -67,7 +67,7 @@ class _GoogleProfileCompletionScreenState
     return cleanPhone.length == 10 && RegExp(r'^\d{10}$').hasMatch(cleanPhone);
   }
 
-  Future<void> _selectedDate(BuildContext context) async {
+  Future<void> _selectedDate() async {
     final DateTime? picked = await showDatePicker(
       context: context,
       initialDate: DateTime(2000),
@@ -166,7 +166,7 @@ class _GoogleProfileCompletionScreenState
         'department': _departmentController.text.trim().isEmpty
             ? null
             : _departmentController.text.trim(),
-        'role': _selectedRole == 'admin' ? 'pending_admin' : 'user',
+        'role': _selectedRole == 'admin' ? 'admin' : 'user',
         'isApproved': _selectedRole == 'user',
         'createdAt': DateTime.now().toIso8601String(),
       });
@@ -201,7 +201,6 @@ class _GoogleProfileCompletionScreenState
 
       // Navigate based on role
       navigateBasedOnRole(context);
-
     } catch (e) {
       print('Error completing profile: $e');
       if (!mounted) return;
@@ -252,12 +251,10 @@ class _GoogleProfileCompletionScreenState
                         Icons.info_outline,
                         color: Colors.green,
                       ),
-                      const SizedBox(
-                        width: 12,
-                      ),
+                      const SizedBox(width: 12),
                       Expanded(
                         child: Text(
-                          'Welcome ${widget.displayName ?? 'User'}! PLease complete your profile to continue',
+                          'Welcome ${widget.displayName ?? ''}! PLease complete your profile to continue',
                           style: const TextStyle(fontSize: 14),
                         ),
                       ),
@@ -265,17 +262,13 @@ class _GoogleProfileCompletionScreenState
                   ),
                 ),
 
-                const SizedBox(
-                  height: 24,
-                ),
+                const SizedBox(height: 24),
 
                 // Account Type
                 _buildSectionHeader('Account Type'),
-                const SizedBox(
-                  height: 12,
-                ),
+                const SizedBox(height: 10),
                 Container(
-                  padding: const EdgeInsets.all(12),
+                  padding: const EdgeInsets.all(10),
                   decoration: BoxDecoration(
                     color: Colors.grey.shade50,
                     borderRadius: BorderRadius.circular(12),
@@ -287,8 +280,7 @@ class _GoogleProfileCompletionScreenState
                     children: [
                       RadioListTile<String>(
                         title: const Text('User'),
-                        subtitle:
-                            const Text('Mark attendance and view records'),
+                        subtitle: const Text('Mark attendance, view records'),
                         value: 'user',
                         groupValue: _selectedRole,
                         activeColor: Colors.green,
@@ -299,7 +291,7 @@ class _GoogleProfileCompletionScreenState
                       RadioListTile<String>(
                         title: const Text('Admin'),
                         subtitle: const Text(
-                            'Create codes, analyze data (requires approval)'),
+                            'Create sessions, manage members (requires approval)'),
                         value: 'admin',
                         groupValue: _selectedRole,
                         activeColor: Colors.green,
@@ -311,19 +303,13 @@ class _GoogleProfileCompletionScreenState
                   ),
                 ),
 
-                const SizedBox(
-                  height: 24,
-                ),
+                const SizedBox(height: 24),
                 const Divider(),
-                const SizedBox(
-                  height: 24,
-                ),
+                const SizedBox(height: 24),
 
                 // Personal information
                 _buildSectionHeader('Personal Information'),
-                const SizedBox(
-                  height: 16,
-                ),
+                const SizedBox(height: 16),
 
                 _buildTextField('First Name', _firstnameController, 'John',
                     isRequired: true),
@@ -332,9 +318,7 @@ class _GoogleProfileCompletionScreenState
                 _buildTextField(
                     'Other Name(s)', _othernameController, 'Optional'),
 
-                const SizedBox(
-                  height: 16,
-                ),
+                const SizedBox(height: 6),
 
                 // Gender and DOB
                 Row(
@@ -361,9 +345,7 @@ class _GoogleProfileCompletionScreenState
                               ),
                             ],
                           ),
-                          const SizedBox(
-                            height: 6,
-                          ),
+                          const SizedBox(height: 6),
                           DropdownButtonFormField<String>(
                             value: _selectedGender,
                             decoration: InputDecoration(
@@ -403,9 +385,7 @@ class _GoogleProfileCompletionScreenState
                         ],
                       ),
                     ),
-                    const SizedBox(
-                      width: 12,
-                    ),
+                    const SizedBox(width: 12),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -432,11 +412,11 @@ class _GoogleProfileCompletionScreenState
                             height: 6,
                           ),
                           InkWell(
-                            onTap: () => _selectedDate(context),
+                            onTap: _selectedDate,
                             child: Container(
                               padding: const EdgeInsets.symmetric(
-                                horizontal: 20,
-                                vertical: 20,
+                                horizontal: 14,
+                                vertical: 18,
                               ),
                               decoration: BoxDecoration(
                                 borderRadius: BorderRadius.circular(12),
@@ -465,7 +445,7 @@ class _GoogleProfileCompletionScreenState
                                   Icon(
                                     Icons.calendar_today,
                                     color: Colors.grey.shade600,
-                                    size: 18,
+                                    size: 16,
                                   ),
                                 ],
                               ),
@@ -477,37 +457,25 @@ class _GoogleProfileCompletionScreenState
                   ],
                 ),
 
-                const SizedBox(
-                  height: 24,
-                ),
+                const SizedBox(height: 24),
                 const Divider(),
-                const SizedBox(
-                  height: 24,
-                ),
+                const SizedBox(height: 20),
 
                 // Contact Information
                 _buildSectionHeader('Contact Information'),
-                const SizedBox(
-                  height: 16,
-                ),
+                const SizedBox(height: 14),
 
                 _buildPhoneField(),
                 _buildTextField(
                     'Residence', _residenceController, 'e.g. Abeka-Lapaz'),
 
-                const SizedBox(
-                  height: 24,
-                ),
+                const SizedBox(height: 20),
                 const Divider(),
-                const SizedBox(
-                  height: 24,
-                ),
+                const SizedBox(height: 20),
 
                 // Work & Education
                 _buildSectionHeader('Work & Education'),
-                const SizedBox(
-                  height: 16,
-                ),
+                const SizedBox(height: 14),
 
                 _buildTextField(
                     'Occupation', _occupationController, 'e.g. Student'),
@@ -541,9 +509,7 @@ class _GoogleProfileCompletionScreenState
                   ),
                 ),
 
-                const SizedBox(
-                  height: 16,
-                ),
+                const SizedBox(height: 12),
 
                 if (_isWorking)
                   _buildTextField(
@@ -558,36 +524,29 @@ class _GoogleProfileCompletionScreenState
                       'e.g. Computer Science'),
                 ],
 
-                const SizedBox(
-                  height: 24,
-                ),
+                const SizedBox(height: 20),
                 const Divider(),
-                const SizedBox(
-                  height: 24,
-                ),
+                const SizedBox(height: 20),
 
-                // Church Information
-                _buildSectionHeader('Church Information'),
-                const SizedBox(
-                  height: 16,
-                ),
+                // Organization Information
+                _buildSectionHeader('Organization Information'),
+                const SizedBox(height: 14),
 
                 _buildTextField('Family', _familyController, 'e.g. Truth'),
                 _buildTextField(
                     'Department', _departmentController, 'e.g. Media'),
 
-                const SizedBox(
-                  height: 32,
-                ),
+                const SizedBox(height: 28),
 
                 // Complete Profile Button
                 SizedBox(
                   width: double.infinity,
-                  height: 65,
+                  height: 56,
                   child: ElevatedButton(
                     onPressed: _isLoading ? null : _completeProfile,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.green,
+                      foregroundColor: Colors.white,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
                       ),
@@ -603,9 +562,7 @@ class _GoogleProfileCompletionScreenState
                   ),
                 ),
 
-                const SizedBox(
-                  height: 40,
-                ),
+                const SizedBox(height: 40),
               ],
             ),
           ),
@@ -630,7 +587,7 @@ class _GoogleProfileCompletionScreenState
     return Text(
       title,
       style: TextStyle(
-        fontSize: 18,
+        fontSize: 16,
         fontWeight: FontWeight.bold,
         color: Colors.grey.shade800,
       ),

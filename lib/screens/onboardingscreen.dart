@@ -86,7 +86,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             ),
             _buildIndicator(),
             const SizedBox(
-              height: 30,
+              height: 24,
             ),
             _buildButton(_pages[_currentPage]),
             const SizedBox(
@@ -147,8 +147,10 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
           width: _currentPage == index ? 16 : 8,
           height: _currentPage == index ? 12 : 8,
           decoration: BoxDecoration(
-              color: _currentPage == index ? Colors.green : Colors.grey,
-              shape: BoxShape.circle),
+            color: _currentPage == index ? Colors.green : Colors.grey,
+            shape: BoxShape.circle,
+            borderRadius: BorderRadius.circular(4),
+          ),
         ),
       ),
     );

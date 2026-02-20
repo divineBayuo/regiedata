@@ -8,6 +8,7 @@ import 'package:regie_data/screens/attendance_history_screen.dart';
 import 'package:regie_data/screens/code_entry_screen.dart';
 import 'package:regie_data/screens/qr_scanner_screen.dart';
 import 'package:regie_data/screens/signinpage.dart';
+import 'package:regie_data/screens/user_profile_screen.dart';
 
 class UserHomeScreen extends StatefulWidget {
   const UserHomeScreen({super.key});
@@ -23,6 +24,7 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
   String? _userName;
   String? _userEmail;
   int _attendanceCount = 0;
+  int _thisMonthCount = 0;
 
   @override
   void initState() {
@@ -32,25 +34,46 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
 
   Future<void> _loadUserData() async {
     User? user = _auth.currentUser;
-    if (user != null) {
+    if (user == null) return;
+
+    DocumentSnapshot userDoc =
+        await _firestore.collection('users').doc(user.uid).get();
+    if (userDoc.exists && mounted) {
       DocumentSnapshot userDoc =
           await _firestore.collection('users').doc(user.uid).get();
       if (userDoc.exists) {
         Map<String, dynamic> userData = userDoc.data() as Map<String, dynamic>;
         setState(() {
-          _userName = '${userData['firstName']} ${userData['surname']}';
+          final firstname =
+              userData['firstname'] ?? userData['firstName'] ?? '';
+          final surname = userData['surname'] ?? '';
+          _userName = '$firstname $surname'.trim();
           _userEmail = userData['email'];
         });
       }
 
-      // Get attendance count
-      QuerySnapshot attendanceSnapshot = await _firestore
+      // Get total attendance count
+      QuerySnapshot totalSnap = await _firestore
           .collection('attendance')
           .where('userId', isEqualTo: user.uid)
           .get();
-      setState(() {
-        _attendanceCount = attendanceSnapshot.docs.length;
-      });
+
+      // Get this month attendance count
+      final now = DateTime.now();
+      final startOfMonth = DateTime(now.year, now.month, 1);
+      QuerySnapshot monthSnap = await _firestore
+          .collection('attendance')
+          .where('userId', isEqualTo: user.uid)
+          .where('timestamp',
+              isGreaterThanOrEqualTo: Timestamp.fromDate(startOfMonth))
+          .get();
+
+      if (mounted) {
+        setState(() {
+          _attendanceCount = totalSnap.docs.length;
+          _thisMonthCount = monthSnap.docs.length;
+        });
+      }
     }
   }
 
@@ -64,11 +87,20 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.grey.shade50,
       appBar: AppBar(
         title: const Text('My Attendance'),
         backgroundColor: Colors.green,
         foregroundColor: Colors.white,
         actions: [
+          IconButton(
+            onPressed: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const UserProfileScreen()),
+            ).then((_) => _loadUserData()),
+            icon: const Icon(Icons.person),
+            tooltip: 'My Profile',
+          ),
           IconButton(
             onPressed: _signOut,
             icon: const Icon(Icons.logout),
@@ -76,136 +108,166 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
           )
         ],
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Welcome Card
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(24),
-              decoration: BoxDecoration(
-                gradient: const LinearGradient(
-                    colors: [Colors.green, Colors.lightGreen],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight),
-                borderRadius: BorderRadius.circular(16),
+      body: RefreshIndicator(
+        onRefresh: _loadUserData,
+        child: SingleChildScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Welcome Card
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                      colors: [Colors.green, Colors.lightGreen],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight),
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: Row(
+                  children: [
+                    CircleAvatar(
+                      radius: 28,
+                      backgroundColor: Colors.white.withOpacity(0.3),
+                      child: Text(
+                        _userName?.isNotEmpty == true
+                            ? _userName![0].toUpperCase()
+                            : 'U',
+                        style: const TextStyle(
+                            fontSize: 24,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white),
+                      ),
+                    ),
+                    const SizedBox(width: 14),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            'Welcome back!',
+                            style:
+                                TextStyle(color: Colors.white70, fontSize: 13),
+                          ),
+                          Text(_userName ?? 'User',
+                              style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold)),
+                          Text(
+                            _userEmail ?? '',
+                            style: const TextStyle(
+                                color: Colors.white70, fontSize: 12),
+                          )
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
               ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+
+              const SizedBox(height: 20),
+
+              // Stats card
+              Row(
                 children: [
-                  const Text(
-                    'Welcome Back!',
-                    style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 24,
-                        fontWeight: FontWeight.bold),
+                  Expanded(
+                    child: _buildStatCard(
+                        'Total Attendance',
+                        _attendanceCount.toString(),
+                        Icons.check_circle,
+                        Colors.blue),
                   ),
                   const SizedBox(
-                    height: 8,
+                    width: 12,
                   ),
-                  Text(
-                    _userName ?? 'User',
-                    style: const TextStyle(color: Colors.white, fontSize: 18),
+                  Expanded(
+                    child: _buildStatCard(
+                        'This Month',
+                        _thisMonthCount.toString(),
+                        Icons.calendar_month,
+                        Colors.orange),
                   ),
-                  Text(
-                    _userEmail ?? '',
-                    style: const TextStyle(color: Colors.white70, fontSize: 14),
-                  )
                 ],
               ),
-            ),
 
-            const SizedBox(height: 24),
+              const SizedBox(height: 24),
 
-            // Stats card
-            Row(
-              children: [
-                Expanded(
-                  child: _buildStatCard(
-                      'Total Attendance',
-                      _attendanceCount.toString(),
-                      Icons.check_circle,
-                      Colors.blue),
-                ),
-                const SizedBox(
-                  width: 16,
-                ),
-                Expanded(
-                  child: _buildStatCard(
-                      'This Month', '0', Icons.calendar_month, Colors.orange),
-                ),
-              ],
-            ),
+              // Quick Actions
+              Text(
+                'Quick Actions',
+                style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.grey.shade800),
+              ),
+              const SizedBox(height: 14),
 
-            const SizedBox(
-              height: 24,
-            ),
+              _buildActionButton(
+                'Scan QR Code',
+                'Scan to mark your attendance',
+                Icons.qr_code_scanner,
+                Colors.green,
+                () => Navigator.push(context,
+                    MaterialPageRoute(builder: (_) => const QRScannerScreen())),
+              ),
 
-            // Quick Actions
-            Text(
-              'Quick Actions',
-              style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.grey.shade800),
-            ),
-            const SizedBox(
-              height: 16,
-            ),
+              const SizedBox(height: 10),
 
-            _buildActionButton(
-              'Scan QR Code',
-              'Markyour attendance',
-              Icons.qr_code_scanner,
-              Colors.green,
-              () => _showQRScanner(context),
-            ),
+              _buildActionButton(
+                'Enter Code',
+                'Type the sesssion PIN to check in',
+                Icons.pin,
+                Colors.blue,
+                () => Navigator.push(context,
+                    MaterialPageRoute(builder: (_) => const CodeEntryScreen())),
+              ),
 
-            const SizedBox(
-              height: 12,
-            ),
+              const SizedBox(height: 10),
 
-            _buildActionButton(
-              'Enter Code',
-              'Use text code to check in',
-              Icons.pin,
-              Colors.blue,
-              () => _showCodeInput(context),
-            ),
+              _buildActionButton(
+                'Attendance History',
+                'View all your attendance records',
+                Icons.history,
+                Colors.purple,
+                () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                        builder: (_) => const AttendanceHistoryScreen())),
+              ),
 
-            const SizedBox(
-              height: 12,
-            ),
+              const SizedBox(height: 10),
 
-            _buildActionButton(
-              'View History',
-              'See your attendance records',
-              Icons.history,
-              Colors.purple,
-              () => _viewAttendanceHistory(context),
-            ),
+              _buildActionButton(
+                'My Profile',
+                'View and edit your personal details',
+                Icons.person_outline,
+                Colors.teal,
+                () => Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const UserProfileScreen()),
+                ).then((_) => _loadUserData()),
+              ),
 
-            const SizedBox(
-              height: 24,
-            ),
+              const SizedBox(height: 24),
 
-            // Recent Attendance
-            Text(
-              'Recent Attendance',
-              style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.grey.shade800),
-            ),
+              // Recent Attendance
+              Text(
+                'Recent Attendance',
+                style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.grey.shade800),
+              ),
 
-            const SizedBox(
-              height: 16,
-            ),
+              const SizedBox(height: 14),
 
-            _buildRecentAttendanceList(),
-          ],
+              _buildRecentAttendanceList(),
+            ],
+          ),
         ),
       ),
     );
@@ -214,7 +276,7 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
   Widget _buildStatCard(
       String title, String value, IconData icon, Color color) {
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
@@ -226,18 +288,16 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
           Icon(
             icon,
             color: color,
-            size: 32,
+            size: 28,
           ),
-          const SizedBox(
-            height: 12,
-          ),
+          const SizedBox(height: 10),
           Text(
             value,
-            style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
+            style: const TextStyle(fontSize: 26, fontWeight: FontWeight.bold),
           ),
           Text(
             title,
-            style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+            style: TextStyle(fontSize: 11, color: Colors.grey.shade600),
           ),
         ],
       ),
@@ -259,7 +319,7 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
         child: Row(
           children: [
             Container(
-              padding: const EdgeInsets.all(12),
+              padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
                 color: color.withOpacity(0.1),
                 borderRadius: BorderRadius.circular(8),
@@ -267,12 +327,10 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
               child: Icon(
                 icon,
                 color: color,
-                size: 24,
+                size: 22,
               ),
             ),
-            const SizedBox(
-              width: 16,
-            ),
+            const SizedBox(width: 14),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -280,7 +338,7 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
                   Text(
                     title,
                     style: const TextStyle(
-                        fontSize: 16, fontWeight: FontWeight.w600),
+                        fontSize: 15, fontWeight: FontWeight.w600),
                   ),
                   Text(
                     subtitle,
@@ -292,7 +350,7 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
             Icon(
               Icons.arrow_forward_ios,
               color: Colors.grey.shade400,
-              size: 16,
+              size: 14,
             ),
           ],
         ),
@@ -310,13 +368,13 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
           );
         }
 
-        String? orgId = orgSnapshot.data;
+        final orgId = orgSnapshot.data;
         if (orgId == null) {
           return const Text('No organization selected');
         }
 
-        User? user = _auth.currentUser;
-        if (user == null) return const Text('No user logged in');
+        final user = _auth.currentUser;
+        if (user == null) return const Text('Not logged in');
 
         return StreamBuilder<QuerySnapshot>(
           stream: _firestore
@@ -349,13 +407,14 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
               physics: const NeverScrollableScrollPhysics(),
               itemCount: snapshot.data!.docs.length,
               itemBuilder: (context, index) {
-                var doc = snapshot.data!.docs[index];
-                var data = doc.data() as Map<String, dynamic>;
-                DateTime timestamp = (data['timestamp'] as Timestamp).toDate();
+                final doc = snapshot.data!.docs[index];
+                final data = doc.data() as Map<String, dynamic>;
+                final timestamp = data['timestamp'] as Timestamp?;
+                final date = timestamp?.toDate() ?? DateTime.now();
 
                 return Container(
-                  margin: const EdgeInsets.only(bottom: 12),
-                  padding: const EdgeInsets.all(16),
+                  margin: const EdgeInsets.only(bottom: 10),
+                  padding: const EdgeInsets.all(14),
                   decoration: BoxDecoration(
                     color: Colors.white,
                     borderRadius: BorderRadius.circular(12),
@@ -374,9 +433,7 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
                           color: Colors.green,
                         ),
                       ),
-                      const SizedBox(
-                        width: 16,
-                      ),
+                      const SizedBox(width: 14),
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -387,7 +444,7 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
                                   const TextStyle(fontWeight: FontWeight.w600),
                             ),
                             Text(
-                              '${timestamp.day}/${timestamp.month}/${timestamp.year} at ${timestamp.hour}:${timestamp.minute.toString().padLeft(2, '0')}',
+                              '${date.day}/${date.month}/${date.year} at ${date.hour}:${date.minute.toString().padLeft(2, '0')}',
                               style: TextStyle(
                                   fontSize: 12, color: Colors.grey.shade600),
                             )
@@ -402,33 +459,6 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
           },
         );
       },
-    );
-  }
-
-  void _showQRScanner(BuildContext context) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => const QRScannerScreen(),
-      ),
-    );
-  }
-
-  void _showCodeInput(BuildContext context) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => const CodeEntryScreen(),
-      ),
-    );
-  }
-
-  void _viewAttendanceHistory(BuildContext context) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => const AttendanceHistoryScreen(),
-      ),
     );
   }
 }

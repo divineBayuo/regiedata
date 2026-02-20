@@ -95,6 +95,7 @@ class PendingAdminScreen extends StatelessWidget {
                   },
                   style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.green,
+                      foregroundColor: Colors.white,
                       padding: const EdgeInsets.symmetric(vertical: 16),
                       shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12))),
@@ -118,7 +119,7 @@ class PendingAdminScreen extends StatelessWidget {
                 onPressed: () {
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(
-                      content: Text('Contact: admin@regie.com'),
+                      content: Text('Contact your admin for assistance.'),
                     ),
                   );
                 },

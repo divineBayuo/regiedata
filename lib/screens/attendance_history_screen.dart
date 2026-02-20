@@ -30,7 +30,17 @@ class AttendanceHistoryScreen extends StatelessWidget {
 
           if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
             return const Center(
-              child: Text('No attendance records found.'),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.history, size: 80, color: Colors.grey),
+                  SizedBox(height: 16),
+                  Text(
+                    'No attendance records found.',
+                    style: TextStyle(fontSize: 18, color: Colors.grey),
+                  ),
+                ],
+              ),
             );
           }
 
@@ -38,9 +48,10 @@ class AttendanceHistoryScreen extends StatelessWidget {
             padding: const EdgeInsets.all(16),
             itemCount: snapshot.data!.docs.length,
             itemBuilder: (context, index) {
-              var doc = snapshot.data!.docs[index];
-              var data = doc.data() as Map<String, dynamic>;
-              DateTime timestamp = (data['timestamp'] as Timestamp).toDate();
+              final doc = snapshot.data!.docs[index];
+              final data = doc.data() as Map<String, dynamic>;
+              final timestamp = data['timestamp'] as Timestamp?;
+              final date = timestamp?.toDate() ?? DateTime.now();
 
               return Card(
                 margin: const EdgeInsets.only(bottom: 12),
@@ -54,10 +65,11 @@ class AttendanceHistoryScreen extends StatelessWidget {
                   ),
                   title: Text(data['eventName'] ?? 'Attendance'),
                   subtitle: Text(
-                    '${timestamp.day}/${timestamp.month}/${timestamp.year} at ${timestamp.hour}:${timestamp.minute.toString().padLeft(2, '0')}',
+                    '${date.day}/${date.month}/${date.year} at ${date.hour}:${date.minute.toString().padLeft(2, '0')}',
                   ),
-                  trailing: const Icon(
+                  trailing: Icon(
                     Icons.arrow_forward_ios,
+                    color: Colors.grey.shade400,
                     size: 16,
                   ),
                 ),

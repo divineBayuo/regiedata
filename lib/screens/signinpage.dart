@@ -35,14 +35,14 @@ class _SigninpageState extends State<Signinpage> {
 
   Future<void> _loadSavedCredentials() async {
     final prefs = await SharedPreferences.getInstance();
-    final savedEmail = prefs.getString('saved_email');
-    final savedPassword = prefs.getString('saved_password');
+    /* final savedEmail = prefs.getString('saved_email');
+    final savedPassword = prefs.getString('saved_password'); */
     final rememberMe = prefs.getBool('remember_me') ?? false;
 
-    if (rememberMe && savedEmail != null && savedPassword != null) {
+    if (rememberMe/*  && savedEmail != null && savedPassword != null */) {
       setState(() {
-        _emailController.text = savedEmail;
-        _passwordController.text = savedPassword;
+        _emailController.text = prefs.getString('saved_email') ?? '';
+        _passwordController.text = prefs.getString('saved_password') ?? '';
         _rememberMe = true;
       });
     }
@@ -85,8 +85,8 @@ class _SigninpageState extends State<Signinpage> {
 
       if (e.code == 'user-not-found') {
         message = 'No account found with this email. Please sign up first.';
-      } else if (e.code == 'wrong-password') {
-        message = 'Incorrect password';
+      } else if (e.code == 'wrong-password' || e.code == 'invalid-credential') {
+        message = 'Incorrect email or password';
       } else if (e.code == 'invalid-email') {
         message = 'Invalid email address';
       } else if (e.code == 'user-disabled') {

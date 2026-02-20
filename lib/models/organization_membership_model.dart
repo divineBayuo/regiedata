@@ -1,3 +1,5 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+
 class OrganizationMembershipModel {
   final String id;
   final String userId;
@@ -36,8 +38,15 @@ class OrganizationMembershipModel {
       organizationId: map['organizationId'] ?? '',
       role: map['role'] ?? 'user',
       isApproved: map['isApproved'] ?? false,
-      joinedAt: DateTime.parse(map['joinedAt']),
+      joinedAt: _parseDateTime(map['joinedAt']),
       personalData: map['personalData'],
     );
+  }
+
+  static DateTime _parseDateTime(dynamic value) {
+    if (value == null) return DateTime.now();
+    if (value is Timestamp) return value.toDate();
+    if (value is String) return DateTime.tryParse(value) ?? DateTime.now();
+    return DateTime.now();
   }
 }
