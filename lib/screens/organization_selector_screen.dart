@@ -1,3 +1,4 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:regie_data/models/organization_model.dart';
@@ -343,9 +344,20 @@ class _OrganizationSelectorScreenState
                         print(
                             'Joining organization with code: ${codeController.text.trim()}');
 
+                        // fetch user's role from the user's doc
+                        final userDoc = await FirebaseFirestore.instance
+                            .collection('users')
+                            .doc(user.uid)
+                            .get();
+                        final userData = userDoc.data();
+                        final userRole = userData?['role'] as String? ?? 'user';
+
+                        print('User role from document: $userRole');
+
                         final success = await _orgService.joinOrganization(
                           codeController.text.trim(),
                           user.uid,
+                          role: userRole,
                         );
 
                         print('Join result: $success');
@@ -359,13 +371,23 @@ class _OrganizationSelectorScreenState
 
                           if (!context.mounted) return;
 
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content:
-                                  Text('Joined organization successfully!'),
-                              backgroundColor: Colors.green,
-                            ),
-                          );
+                          if (userRole == 'admin') {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text(
+                                    'Join request submitted! Awaiting admin approval.'),
+                                backgroundColor: Colors.orange,
+                              ),
+                            );
+                          } else {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content:
+                                    Text('Joined organization successfully!'),
+                                backgroundColor: Colors.green,
+                              ),
+                            );
+                          }
 
                           // Return success to caller
                           Navigator.pop(context, true);
