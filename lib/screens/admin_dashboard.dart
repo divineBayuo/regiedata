@@ -20,46 +20,53 @@ class AdminDashboard extends StatefulWidget {
   State<AdminDashboard> createState() => _AdminDashboardState();
 }
 
-class _AdminDashboardState extends State<AdminDashboard> {
+class _AdminDashboardState extends State<AdminDashboard>
+    with SingleTickerProviderStateMixin {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
-  int _totalUsers = 0;
+  late TabController _tabController;
+
   int _totalAttendance = 0;
   int _todayAttendance = 0;
   int _activeSessions = 0;
   int _totalOrgMembers = 0;
+  double _totalMoneyCollected = 0;
+
+  // Monthly analytics: map of YYYY-MM -> total amount
+  Map<String, double> _monthlyMoney = {};
 
   @override
   void initState() {
     super.initState();
+    _tabController = TabController(length: 2, vsync: this);
     _loadStats();
+  }
+
+  @override
+  void dispose() {
+    _tabController.dispose();
+    super.dispose();
   }
 
   Future<void> _loadStats() async {
     String? orgId = await OrganizationContext.getCurrentOrganizationId();
-    if (orgId == null) {
-      _showSnackBar('No organization selected');
-      return;
-    }
+    if (orgId == null) return;
 
     // Get organization members count
-    QuerySnapshot membersSnapshot = await _firestore
+    final membersSnapshot = await _firestore
         .collection('organization_members')
         .where('organizationId', isEqualTo: orgId)
         .get();
 
     // Get total attendance for this org
-    QuerySnapshot attendanceSnapshot = await _firestore
+    final attendanceSnapshot = await _firestore
         .collection('attendance')
         .where('organizationId', isEqualTo: orgId)
         .get();
 
-    // Get total users
-    QuerySnapshot usersSnapshot = await _firestore.collection('users').get();
-
     // Get today's attendance
-    DateTime now = DateTime.now();
-    DateTime startOfDay = DateTime(now.year, now.month, now.day);
-    QuerySnapshot todaySnapshot = await _firestore
+    final now = DateTime.now();
+    final startOfDay = DateTime(now.year, now.month, now.day);
+    final todaySnapshot = await _firestore
         .collection('attendance')
         .where('organizationId', isEqualTo: orgId)
         .where('timestamp',
@@ -67,18 +74,50 @@ class _AdminDashboardState extends State<AdminDashboard> {
         .get();
 
     // Get active sessions
-    QuerySnapshot activeSessionsSnapshot = await _firestore
+    final activeSessionsSnapshot = await _firestore
         .collection('attendance_sessions')
         .where('organizationId', isEqualTo: orgId)
         .where('active', isEqualTo: true)
         .get();
 
+    // Fetch all sessions to compute money analytics
+    final sessionsSnapshot = await _firestore
+        .collection('attendance_sessions')
+        .where('organizationId', isEqualTo: orgId)
+        .get();
+
+    double totalMoney = 0;
+    Map<String, double> monthlyMoney = {};
+
+    for (var doc in sessionsSnapshot.docs) {
+      final data = doc.data();
+      final money = (data['moneyCollected'] as num?)?.toDouble() ?? 0.0;
+      if (money > 0) {
+        totalMoney += money;
+        final timestamp = data['createdAt'];
+        DateTime date;
+        if (timestamp is Timestamp) {
+          date = timestamp.toDate();
+        } else {
+          date = DateTime.now();
+        }
+        final key = '${date.year}-${date.month.toString().padLeft(2, '0')}';
+        monthlyMoney[key] = (monthlyMoney[key] ?? 0) + money;
+      }
+    }
+
+    // Sort the monthly map by key
+    final sortedMonthly = Map.fromEntries(
+      monthlyMoney.entries.toList()..sort((a, b) => a.key.compareTo(b.key)),
+    );
+
     setState(() {
-      _totalUsers = usersSnapshot.docs.length;
       _totalAttendance = attendanceSnapshot.docs.length;
       _todayAttendance = todaySnapshot.docs.length;
       _activeSessions = activeSessionsSnapshot.docs.length;
       _totalOrgMembers = membersSnapshot.docs.length;
+      _totalMoneyCollected = totalMoney;
+      _monthlyMoney = sortedMonthly;
     });
   }
 
@@ -96,10 +135,22 @@ class _AdminDashboardState extends State<AdminDashboard> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.grey.shade50,
       appBar: AppBar(
         title: const Text('Admin Dashboard'),
         backgroundColor: Colors.green,
         foregroundColor: Colors.white,
+        elevation: 0,
+        bottom: TabBar(
+          controller: _tabController,
+          indicatorColor: Colors.white,
+          labelColor: Colors.white,
+          unselectedLabelColor: Colors.white70,
+          tabs: const [
+            Tab(text: 'Overview'),
+            Tab(text: 'Analytics'),
+          ],
+        ),
         actions: [
           IconButton(
             onPressed: _signOut,
@@ -107,7 +158,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
           ),
         ],
       ),
-      body: SingleChildScrollView(
+      /* body: SingleChildScrollView(
         padding: const EdgeInsets.all(24),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -309,14 +360,452 @@ class _AdminDashboardState extends State<AdminDashboard> {
             ),
           ],
         ),
+      ), */
+      body: TabBarView(
+        controller: _tabController,
+        children: [
+          _buildOverviewTab(),
+          _buildAnalyticsTab(),
+        ],
       ),
     );
+  }
+
+  Widget _buildOverviewTab() {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Welcome banner
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(
+                colors: [Colors.green, Colors.lightGreen],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: const Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Icon(
+                  Icons.admin_panel_settings,
+                  color: Colors.white,
+                  size: 36,
+                ),
+                SizedBox(height: 10),
+                Text(
+                  'Admin Dashboard',
+                  style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 22,
+                      fontWeight: FontWeight.bold),
+                ),
+                Text(
+                  'Manage attendance, members & finances',
+                  style: TextStyle(color: Colors.white70, fontSize: 13),
+                )
+              ],
+            ),
+          ),
+
+          const SizedBox(height: 20),
+
+          // Stats Row 1
+          Row(
+            children: [
+              Expanded(
+                child: _buildStatCard(
+                  'Members',
+                  _totalOrgMembers.toString(),
+                  Icons.people,
+                  Colors.blue,
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: _buildStatCard(
+                  'Attendance Records',
+                  _totalAttendance.toString(),
+                  Icons.numbers,
+                  Colors.red,
+                ),
+              ),
+            ],
+          ),
+
+          const SizedBox(height: 10),
+
+          // Stats row 2
+          Row(
+            children: [
+              Expanded(
+                child: _buildStatCard(
+                  'Today',
+                  _todayAttendance.toString(),
+                  Icons.today,
+                  Colors.orange,
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: _buildStatCard(
+                  'Active Sessions',
+                  _activeSessions.toString(),
+                  Icons.event,
+                  Colors.green,
+                ),
+              ),
+            ],
+          ),
+
+          const SizedBox(height: 10),
+
+          // Money Stat
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: Colors.grey.shade300),
+            ),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: Colors.teal.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: const Icon(
+                    Icons.attach_money,
+                    color: Colors.teal,
+                    size: 28,
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'GH₵ ${_totalMoneyCollected.toStringAsFixed(2)}',
+                      style: const TextStyle(
+                        fontSize: 22,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    Text(
+                      'Total Money Collected',
+                      style:
+                          TextStyle(fontSize: 12, color: Colors.grey.shade600),
+                    ),
+                  ],
+                )
+              ],
+            ),
+          ),
+
+          // Actions
+          Text(
+            'Admin Actions',
+            style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: Colors.grey.shade800),
+          ),
+          const SizedBox(height: 14),
+
+          _buildActionButton(
+            'Create Live Sessioon',
+            'Generate QR Code & PIN for attendance',
+            Icons.qr_code,
+            Colors.green,
+            () => _showCreateSessionDialog(context),
+          ),
+          const SizedBox(height: 10),
+          _buildActionButton(
+            'Active Sessions',
+            'View and manage currently active sessions',
+            Icons.event_available,
+            Colors.blue,
+            () => _showActiveSessionsScreen(context),
+          ),
+          const SizedBox(height: 10),
+          _buildActionButton(
+            'View All Attendance',
+            'See all attendance records',
+            Icons.list_alt,
+            Colors.purple,
+            () => Navigator.push(context,
+                MaterialPageRoute(builder: (_) => const AllAttendanceScreen())),
+          ),
+          const SizedBox(height: 10),
+          _buildActionButton(
+            'Manage Members',
+            'View, edit & manage member accounts',
+            Icons.people_outline,
+            Colors.indigo,
+            () => Navigator.push(context,
+                MaterialPageRoute(builder: (_) => const ManageUsersScreen())),
+          ),
+          const SizedBox(height: 10),
+          _buildActionButton(
+            'Session History',
+            'View all past attendance sessions',
+            Icons.history,
+            Colors.teal,
+            () => _showSessionHistoryScreen(context),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildAnalyticsTab() {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Money Collected / Month',
+            style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: Colors.grey.shade800),
+          ),
+          const SizedBox(height: 16),
+          if (_monthlyMoney.isEmpty)
+            Container(
+              padding: const EdgeInsets.all(32),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.grey.shade300),
+              ),
+              child: Center(
+                child: Column(
+                  children: [
+                    Icon(
+                      Icons.bar_chart,
+                      size: 60,
+                      color: Colors.grey.shade400,
+                    ),
+                    const SizedBox(height: 12),
+                    Text(
+                      'No financial data yet',
+                      style: TextStyle(color: Colors.grey.shade600),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Record money collected when creating sessions',
+                      style:
+                          TextStyle(fontSize: 12, color: Colors.grey.shade500),
+                    ),
+                  ],
+                ),
+              ),
+            )
+          else
+            _buildBarChart(),
+
+          const SizedBox(height: 24),
+
+          // Monthly breakdown table
+          if (_monthlyMoney.isNotEmpty) ...[
+            Text(
+              'Monthly Breakdown',
+              style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.grey.shade800),
+            ),
+            const SizedBox(height: 12),
+            Container(
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.grey.shade300),
+              ),
+              child: Column(
+                children: _monthlyMoney.entries.map((entry) {
+                  final parts = entry.key.split('-');
+                  final monthName = _monthName(int.parse(parts[1]));
+                  final year = parts[0];
+                  return ListTile(
+                    leading: Container(
+                      width: 40,
+                      height: 40,
+                      decoration: BoxDecoration(
+                        color: Colors.teal.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: const Icon(Icons.calendar_month,
+                          color: Colors.teal, size: 20),
+                    ),
+                    title: Text('$monthName $year'),
+                    trailing: Text(
+                      'GH₵ ${entry.value.toStringAsFixed(2)}',
+                      style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color: Colors.teal,
+                          fontSize: 15),
+                    ),
+                  );
+                }).toList(),
+              ),
+            )
+          ],
+
+          const SizedBox(height: 24),
+
+          // Total summary
+          Container(
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(
+                colors: [Colors.teal, Colors.green],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Grand Total',
+                      style: TextStyle(
+                        color: Colors.white70,
+                        fontSize: 13,
+                      ),
+                    ),
+                    Text(
+                      'All Time Collections',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                      ),
+                    ),
+                  ],
+                ),
+                Text(
+                  'GH₵ ${_totalMoneyCollected.toStringAsFixed(2)}',
+                  style: const TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 24),
+                )
+              ],
+            ),
+          )
+        ],
+      ),
+    );
+  }
+
+  Widget _buildBarChart() {
+    if (_monthlyMoney.isEmpty) return const SizedBox.shrink();
+
+    final maxValue = _monthlyMoney.values.reduce((a, b) => a > b ? a : b);
+    final entries = _monthlyMoney.entries.toList();
+
+    return Container(
+      height: 220,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.grey.shade300),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: entries.map((entry) {
+          final heightFraction = maxValue > 0 ? entry.value / maxValue : 0.0;
+          final parts = entry.key.split('-');
+          final monthLabel = _monthName(int.parse(parts[1])).substring(0, 3);
+          return Expanded(
+              child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 4),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                Text(
+                  'GH₵ ${entry.value.toStringAsFixed(0)}',
+                  style: const TextStyle(
+                    fontSize: 9,
+                    fontWeight: FontWeight.bold,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 4),
+                AnimatedContainer(
+                  duration: const Duration(milliseconds: 500),
+                  height: (heightFraction * 130).clamp(4.0, 130.0),
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      colors: [Colors.teal, Colors.green],
+                      begin: Alignment.bottomCenter,
+                      end: Alignment.topCenter,
+                    ),
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  monthLabel,
+                  style: const TextStyle(
+                    fontSize: 10,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                Text(
+                  parts[0].substring(2),
+                  style: TextStyle(
+                    fontSize: 9,
+                    color: Colors.grey.shade500,
+                  ),
+                )
+              ],
+            ),
+          ));
+        }).toList(),
+      ),
+    );
+  }
+
+  String _monthName(int month) {
+    const names = [
+      '',
+      'January',
+      'February',
+      'March',
+      'April',
+      'May',
+      'June',
+      'July',
+      'August',
+      'September',
+      'October',
+      'November',
+      'December'
+    ];
+    return names[month];
   }
 
   Widget _buildStatCard(
       String title, String value, IconData icon, Color color) {
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
@@ -325,21 +814,19 @@ class _AdminDashboardState extends State<AdminDashboard> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(icon, color: color, size: 32),
-          const SizedBox(
-            height: 12,
-          ),
+          Icon(icon, color: color, size: 28),
+          const SizedBox(height: 10),
           Text(
             value,
             style: const TextStyle(
-              fontSize: 28,
+              fontSize: 26,
               fontWeight: FontWeight.bold,
             ),
           ),
           Text(
             title,
             style: TextStyle(
-              fontSize: 12,
+              fontSize: 11,
               color: Colors.grey.shade600,
             ),
           ),
@@ -348,51 +835,13 @@ class _AdminDashboardState extends State<AdminDashboard> {
     );
   }
 
-  Widget _buildWideStatCard(
-      String title, String value, IconData icon, Color color) {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey.shade300),
-      ),
-      child: Row(
-        children: [
-          Icon(
-            icon,
-            color: color,
-            size: 32,
-          ),
-          const SizedBox(
-            width: 12,
-          ),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                value,
-                style: const TextStyle(
-                  fontSize: 28,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              Text(
-                title,
-                style: TextStyle(
-                  fontSize: 12,
-                  color: Colors.grey.shade600,
-                ),
-              ),
-            ],
-          )
-        ],
-      ),
-    );
-  }
-
-  Widget _buildActionButton(String title, String subtitle, IconData icon,
-      Color color, VoidCallback onTap) {
+  Widget _buildActionButton(
+    String title,
+    String subtitle,
+    IconData icon,
+    Color color,
+    VoidCallback onTap,
+  ) {
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(12),
@@ -406,7 +855,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
         child: Row(
           children: [
             Container(
-              padding: const EdgeInsets.all(12),
+              padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
                 color: color.withOpacity(0.1),
                 borderRadius: BorderRadius.circular(8),
@@ -414,11 +863,11 @@ class _AdminDashboardState extends State<AdminDashboard> {
               child: Icon(
                 icon,
                 color: color,
-                size: 24,
+                size: 22,
               ),
             ),
             const SizedBox(
-              width: 16,
+              width: 14,
             ),
             Expanded(
               child: Column(
@@ -427,7 +876,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
                   Text(
                     title,
                     style: const TextStyle(
-                      fontSize: 16,
+                      fontSize: 15,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
@@ -444,7 +893,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
             Icon(
               Icons.arrow_forward_ios,
               color: Colors.grey.shade400,
-              size: 16,
+              size: 14,
             ),
           ],
         ),
@@ -452,9 +901,11 @@ class _AdminDashboardState extends State<AdminDashboard> {
     );
   }
 
+  // Create Session Screen
   void _showCreateSessionDialog(BuildContext parentContext) {
     final TextEditingController eventNameController = TextEditingController();
     final GlobalKey qrImageKey = GlobalKey(debugLabel: 'qr_image');
+    final moneyController = TextEditingController();
 
     String generatedCode = '';
     String sessionId = '';
@@ -467,7 +918,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
         return StatefulBuilder(
           builder: (context, setDialogState) {
             return AlertDialog(
-              title: const Text('Create Attendance Code'),
+              title: const Text('Create Live Session'),
               content: SizedBox(
                 width: 350,
                 child: SingleChildScrollView(
@@ -478,19 +929,37 @@ class _AdminDashboardState extends State<AdminDashboard> {
                         TextField(
                           controller: eventNameController,
                           decoration: const InputDecoration(
-                            labelText: 'Event Name',
+                            labelText: 'Session / Event Name *',
                             hintText:
                                 'e.g., Monday Youth Service - Family Wars',
                             border: OutlineInputBorder(),
                             prefixIcon: Icon(Icons.event),
                           ),
                         ),
+                        const SizedBox(height: 16),
+                        TextField(
+                          controller: moneyController,
+                          decoration: const InputDecoration(
+                            labelText: 'Money Collected (GH₵) - optional',
+                            hintText: '0.00',
+                            border: OutlineInputBorder(),
+                            prefixIcon: Icon(Icons.attach_money),
+                          ),
+                          keyboardType: const TextInputType.numberWithOptions(
+                              decimal: true),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          'Leave money field empty if no collection for this session.',
+                          style: TextStyle(
+                              fontSize: 11, color: Colors.grey.shade600),
+                        )
                       ] else ...[
                         // Show generated session details
                         RepaintBoundary(
                           key: qrImageKey,
                           child: Container(
-                            padding: const EdgeInsets.all(24),
+                            padding: const EdgeInsets.all(20),
                             color: Colors.white,
                             child: Column(
                               children: [
@@ -501,9 +970,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
                                     fontWeight: FontWeight.bold,
                                   ),
                                 ),
-                                const SizedBox(
-                                  height: 16,
-                                ),
+                                const SizedBox(height: 12),
                                 const Text(
                                   'QR Code',
                                   style: TextStyle(
@@ -515,7 +982,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
                                   height: 8,
                                 ),
                                 Container(
-                                  padding: const EdgeInsets.all(16),
+                                  padding: const EdgeInsets.all(12),
                                   decoration: BoxDecoration(
                                     color: Colors.white,
                                     borderRadius: BorderRadius.circular(12),
@@ -525,32 +992,28 @@ class _AdminDashboardState extends State<AdminDashboard> {
                                   child: QrImageView(
                                     data: generatedCode,
                                     version: QrVersions.auto,
-                                    size: 200,
+                                    size: 180,
                                   ),
                                 ),
-                                const SizedBox(
-                                  height: 16,
-                                ),
+                                const SizedBox(height: 12),
                                 Container(
                                   padding: const EdgeInsets.symmetric(
-                                    horizontal: 24,
-                                    vertical: 12,
+                                    horizontal: 20,
+                                    vertical: 10,
                                   ),
                                   decoration: BoxDecoration(
                                       color: Colors.green.shade50,
-                                      borderRadius: BorderRadius.circular(12)),
+                                      borderRadius: BorderRadius.circular(10)),
                                   child: Text(
                                     'PIN: $generatedCode',
                                     style: const TextStyle(
-                                      fontSize: 24,
+                                      fontSize: 22,
                                       fontWeight: FontWeight.bold,
                                       letterSpacing: 3,
                                     ),
                                   ),
                                 ),
-                                const SizedBox(
-                                  height: 12,
-                                ),
+                                const SizedBox(height: 8),
                                 const Text(
                                   'Scan QR or enter PIN to mark attendance',
                                   style: TextStyle(
@@ -562,9 +1025,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
                             ),
                           ),
                         ),
-                        const SizedBox(
-                          height: 16,
-                        ),
+                        const SizedBox(height: 12),
                         // Share buttons
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -576,14 +1037,14 @@ class _AdminDashboardState extends State<AdminDashboard> {
                                     ClipboardData(text: generatedCode));
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   const SnackBar(
-                                    content: Text('PIN copied to clipboard!'),
+                                    content: Text('PIN copied!'),
                                     duration: Duration(seconds: 2),
                                   ),
                                 );
                               },
                               icon: const Icon(
                                 Icons.copy,
-                                size: 18,
+                                size: 16,
                               ),
                               label: const Text('Copy PIN'),
                               style: ElevatedButton.styleFrom(
@@ -603,7 +1064,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
                               },
                               icon: const Icon(
                                 Icons.share,
-                                size: 18,
+                                size: 16,
                               ),
                               label: const Text('Share QR'),
                               style: ElevatedButton.styleFrom(
@@ -654,6 +1115,13 @@ class _AdminDashboardState extends State<AdminDashboard> {
                       final code =
                           (Random().nextInt(900000) + 100000).toString();
 
+                      // Parse optional money amount
+                      double? money;
+                      final moneyText = moneyController.text.trim();
+                      if (moneyText.isNotEmpty) {
+                        money = double.tryParse(moneyText);
+                      }
+
                       // Save to Firestore
                       final docRef = await _firestore
                           .collection('attendance_sessions')
@@ -664,6 +1132,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
                         'createdBy': FirebaseAuth.instance.currentUser?.uid,
                         'active': true,
                         'organizationId': orgId,
+                        if (money != null && money > 0) 'moneyCollected': money,
                       });
 
                       /* if (!context.mounted) return; */
@@ -677,7 +1146,11 @@ class _AdminDashboardState extends State<AdminDashboard> {
                       // Refresh stats
                       /* _loadStats(); */
                     },
-                    child: const Text('Generate'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.green,
+                      foregroundColor: Colors.white,
+                    ),
+                    child: const Text('Create Session'),
                   ),
                 ] else ...[
                   TextButton(
@@ -697,13 +1170,14 @@ class _AdminDashboardState extends State<AdminDashboard> {
                         ),
                       );
                       if (mounted) {
-                        setState(
-                          () {},
-                        );
+                        setState(() {});
                         _loadStats();
                       }
                     },
-                    child: const Text('Close Session'),
+                    child: const Text(
+                      'End Session',
+                      style: TextStyle(color: Colors.red),
+                    ),
                   ),
                   ElevatedButton(
                     onPressed: () {
@@ -724,6 +1198,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
       },
     ).then((_) {
       eventNameController.dispose();
+      moneyController.dispose();
       // ALways refresh stats when dialog closes
       if (mounted) {
         setState(() {});
@@ -732,8 +1207,12 @@ class _AdminDashboardState extends State<AdminDashboard> {
     });
   }
 
-  Future<void> _captureAndShareQR(BuildContext context, GlobalKey qrKey,
-      String eventName, String code) async {
+  Future<void> _captureAndShareQR(
+    BuildContext context,
+    GlobalKey qrKey,
+    String eventName,
+    String code,
+  ) async {
     try {
       if (qrKey.currentContext == null) return;
       // Find render object
@@ -755,12 +1234,13 @@ class _AdminDashboardState extends State<AdminDashboard> {
       if (!context.mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Error: ${e.toString()}'),
+          content: Text('Error Sharing: ${e.toString()}'),
         ),
       );
     }
   }
 
+  // Active Sessions Screen
   void _showActiveSessionsScreen(BuildContext context) async {
     String? orgId = await OrganizationContext.getCurrentOrganizationId();
     if (orgId == null) return;
@@ -823,9 +1303,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
                         size: 80,
                         color: Colors.grey,
                       ),
-                      SizedBox(
-                        height: 16,
-                      ),
+                      SizedBox(height: 16),
                       Text(
                         'No Active Sessions',
                         style: TextStyle(
@@ -837,15 +1315,17 @@ class _AdminDashboardState extends State<AdminDashboard> {
                   ),
                 );
               }
-              
+
               return ListView.builder(
+                padding: const EdgeInsets.all(16),
                 itemCount: snapshot.data!.docs.length,
                 itemBuilder: (context, index) {
-                  var doc = snapshot.data!.docs[index];
-                  var data = doc.data() as Map<String, dynamic>;
+                  final doc = snapshot.data!.docs[index];
+                  final data = doc.data() as Map<String, dynamic>;
+                  final money = (data['moneyCollected'] as num?)?.toDouble();
 
                   return Card(
-                    margin: const EdgeInsets.only(bottom: 16),
+                    margin: const EdgeInsets.only(bottom: 14),
                     child: ExpansionTile(
                       leading: const CircleAvatar(
                         backgroundColor: Colors.green,
@@ -854,7 +1334,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
                           color: Colors.white,
                         ),
                       ),
-                      title: Text(data['eventName'] ?? 'Event'),
+                      title: Text(data['eventName'] ?? 'Session'),
                       subtitle: Text('PIN: ${data['code']}'),
                       children: [
                         Padding(
@@ -865,10 +1345,88 @@ class _AdminDashboardState extends State<AdminDashboard> {
                               QrImageView(
                                 data: data['code'],
                                 version: QrVersions.auto,
-                                size: 150,
+                                size: 140,
                               ),
-                              const SizedBox(
-                                height: 16,
+                              const SizedBox(height: 14),
+                              if (money != null && money > 0)
+                                Container(
+                                  padding: const EdgeInsets.all(10),
+                                  decoration: BoxDecoration(
+                                    color: Colors.teal.shade50,
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  child: Row(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      const Icon(Icons.attach_money,
+                                          color: Colors.teal, size: 18),
+                                      Text(
+                                        'GH₵ ${money.toStringAsFixed(2)} collected',
+                                        style: const TextStyle(
+                                            color: Colors.teal,
+                                            fontWeight: FontWeight.w600),
+                                      )
+                                    ],
+                                  ),
+                                ),
+                              const SizedBox(height: 12),
+                              StreamBuilder<QuerySnapshot>(
+                                stream: _firestore
+                                    .collection('attendance')
+                                    .where('sessionId', isEqualTo: doc.id)
+                                    .snapshots(),
+                                builder: (context, attSnap) {
+                                  int count = attSnap.hasData
+                                      ? attSnap.data!.docs.length
+                                      : 0;
+                                  return Text(
+                                    '$count attendees',
+                                    style: TextStyle(
+                                        fontSize: 15,
+                                        color: Colors.grey.shade700,
+                                        fontWeight: FontWeight.w600),
+                                  );
+                                },
+                              ),
+                              const SizedBox(height: 14),
+                              Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceEvenly,
+                                children: [
+                                  ElevatedButton.icon(
+                                    onPressed: () {
+                                      Clipboard.setData(
+                                          ClipboardData(text: data['code']));
+                                      ScaffoldMessenger.of(context)
+                                          .showSnackBar(const SnackBar(
+                                              content: Text('PIN copied')));
+                                    },
+                                    icon: const Icon(Icons.copy, size: 16),
+                                    label: const Text('Copy PIN'),
+                                    style: ElevatedButton.styleFrom(
+                                        backgroundColor: Colors.blue,
+                                        foregroundColor: Colors.white),
+                                  ),
+                                  ElevatedButton.icon(
+                                    onPressed: () async {
+                                      await _firestore
+                                          .collection('attendance_sessions')
+                                          .doc(doc.id)
+                                          .update({'active': false});
+                                      if (!context.mounted) return;
+                                      ScaffoldMessenger.of(context)
+                                          .showSnackBar(const SnackBar(
+                                              content: Text('Session ended')));
+                                      _loadStats();
+                                    },
+                                    icon: const Icon(Icons.close, size: 16),
+                                    label: const Text('End Session'),
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: Colors.orange,
+                                      foregroundColor: Colors.white,
+                                    ),
+                                  )
+                                ],
                               ),
 
                               // PIN Display
@@ -972,6 +1530,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
     );
   }
 
+  // Session History Screen
   void _showSessionHistoryScreen(BuildContext context) async {
     String? orgId = await OrganizationContext.getCurrentOrganizationId();
     print('DEBUG: Current Org ID: $orgId');
@@ -1013,10 +1572,14 @@ class _AdminDashboardState extends State<AdminDashboard> {
                 padding: const EdgeInsets.all(16),
                 itemCount: snapshot.data!.docs.length,
                 itemBuilder: (context, index) {
-                  var doc = snapshot.data!.docs[index];
-                  var data = doc.data() as Map<String, dynamic>;
-                  bool isActive = data['active'] ?? false;
-                  Timestamp? createdAt = data['createdAt'];
+                  final doc = snapshot.data!.docs[index];
+                  final data = doc.data() as Map<String, dynamic>;
+                  final isActive = data['active'] ?? false;
+                  final createdAt = data['createdAt'];
+                  final money = (data['moneyCollected'] as num?)?.toDouble();
+
+                  DateTime? date;
+                  if (createdAt is Timestamp) date = createdAt.toDate();
 
                   return Card(
                     margin: const EdgeInsets.only(bottom: 12),
@@ -1028,16 +1591,24 @@ class _AdminDashboardState extends State<AdminDashboard> {
                           color: Colors.white,
                         ),
                       ),
-                      title: Text(data['eventName'] ?? 'Event'),
+                      title: Text(data['eventName'] ?? 'Session'),
                       subtitle: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text('PIN: ${data['code']}'),
-                          if (createdAt != null)
+                          if (date != null)
                             Text(
-                              'Created: ${_formatDate(createdAt.toDate())}',
-                              style: const TextStyle(fontSize: 12),
+                              '${date.day}/${date.month}/${date.year} at ${date.hour}:${date.minute.toString().padLeft(2, '0')}',
+                              style: const TextStyle(fontSize: 11),
                             ),
+                          if (money != null && money > 0)
+                            Text(
+                              'GH₵ ${money.toStringAsFixed(2)} collected',
+                              style: const TextStyle(
+                                  color: Colors.teal,
+                                  fontWeight: FontWeight.w600,
+                                  fontSize: 12),
+                            )
                         ],
                       ),
                       trailing: StreamBuilder<QuerySnapshot>(
@@ -1066,18 +1637,5 @@ class _AdminDashboardState extends State<AdminDashboard> {
         ),
       ),
     );
-  }
-
-  void _showSnackBar(String message, {int duration = 3}) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        duration: Duration(seconds: duration),
-      ),
-    );
-  }
-
-  String _formatDate(DateTime date) {
-    return ('${date.day}/${date.month}/${date.year} ${date.hour}:${date.minute.toString().padLeft(2, '0')}');
   }
 }

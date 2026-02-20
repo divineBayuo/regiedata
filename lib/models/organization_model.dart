@@ -38,15 +38,10 @@ class OrganizationModel {
     );
   }
 
-  static DateTime _parseDateTime(dynamic value){
-    if (value == null) {
-      return DateTime.now();
-    } else if (value is Timestamp) {
-      return value.toDate();
-    } else if (value is String) {
-      return DateTime.parse(value);
-    } else {
-      return DateTime.now();
-    }
+  static DateTime _parseDateTime(dynamic value) {
+    if (value == null) return DateTime.now();
+    if (value is Timestamp) return value.toDate();
+    if (value is String) return DateTime.tryParse(value) ?? DateTime.now();
+    return DateTime.now();
   }
 }

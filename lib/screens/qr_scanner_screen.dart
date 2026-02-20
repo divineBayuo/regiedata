@@ -74,11 +74,11 @@ class _QRScannerScreenState extends State<QRScannerScreen> {
           ),
           // Instructions
           Positioned(
-            bottom: 100,
+            bottom: 80,
             left: 0,
             right: 0,
             child: Container(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.all(14),
               color: Colors.black54,
               child: const Text(
                 'Position the QR code within the frame',
@@ -129,17 +129,16 @@ class _QRScannerScreenState extends State<QRScannerScreen> {
       }
 
       // Get session data
-      var sessionData = sessionQuery.docs.first.data() as Map<String, dynamic>;
-      String eventName = sessionData['eventName'] ?? 'Attendance';
+      final sessionData =
+          sessionQuery.docs.first.data() as Map<String, dynamic>;
+      final eventName = sessionData['eventName'] ?? 'Attendance';
 
       // Check if user already marked attendance for this session
       User? user = FirebaseAuth.instance.currentUser;
       if (user == null) {
         if (!mounted) return;
         _showErrorDialog('Error', 'You must be logged in to mark attendance.');
-        setState(() {
-          _isProcessing = false;
-        });
+        setState(() => _isProcessing = false);
         return;
       }
 
@@ -155,9 +154,7 @@ class _QRScannerScreenState extends State<QRScannerScreen> {
         if (!mounted) return;
         _showErrorDialog('Already Marked',
             'You have already marked attendance for this event.');
-        setState(() {
-          _isProcessing = false;
-        });
+        setState(() => _isProcessing = false);
         return;
       }
 
@@ -177,7 +174,7 @@ class _QRScannerScreenState extends State<QRScannerScreen> {
       Navigator.pop(context);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Attendance marked for: $eventName'),
+          content: Text('✓ Attendance marked for: $eventName'),
           backgroundColor: Colors.green,
           duration: const Duration(seconds: 3),
         ),
@@ -185,9 +182,7 @@ class _QRScannerScreenState extends State<QRScannerScreen> {
     } catch (e) {
       if (!mounted) return;
       _showErrorDialog('Error', 'Failed to mark attendance: ${e.toString()}');
-      setState(() {
-        _isProcessing = false;
-      });
+      setState(() => _isProcessing = false);
     }
   }
 
@@ -201,9 +196,7 @@ class _QRScannerScreenState extends State<QRScannerScreen> {
           TextButton(
             onPressed: () {
               Navigator.pop(context);
-              setState(() {
-                _isProcessing = false;
-              });
+              setState(() => _isProcessing = false);
             },
             child: const Text('OK'),
           ),

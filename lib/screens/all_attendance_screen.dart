@@ -67,9 +67,7 @@ class _AllAttendanceScreenState extends State<AllAttendanceScreen> {
                     size: 80,
                     color: Colors.grey,
                   ),
-                  SizedBox(
-                    height: 16,
-                  ),
+                  SizedBox(height: 16),
                   Text(
                     'No attendance records yet',
                     style: TextStyle(fontSize: 18, color: Colors.grey),
@@ -83,9 +81,10 @@ class _AllAttendanceScreenState extends State<AllAttendanceScreen> {
             padding: const EdgeInsets.all(16),
             itemCount: snapshot.data!.docs.length,
             itemBuilder: (context, index) {
-              var doc = snapshot.data!.docs[index];
-              var data = doc.data() as Map<String, dynamic>;
-              DateTime timestamp = (data['timestamp'] as Timestamp).toDate();
+              final doc = snapshot.data!.docs[index];
+              final data = doc.data() as Map<String, dynamic>;
+              final timestamp = data['timestamp'] as Timestamp?;
+              final date = timestamp?.toDate() ?? DateTime.now();
 
               return FutureBuilder<DocumentSnapshot>(
                 future: FirebaseFirestore.instance
@@ -95,10 +94,13 @@ class _AllAttendanceScreenState extends State<AllAttendanceScreen> {
                 builder: (context, userSnapshot) {
                   String userName = 'Unknown User';
                   if (userSnapshot.hasData && userSnapshot.data!.exists) {
-                    var userData =
+                    final userData =
                         userSnapshot.data!.data() as Map<String, dynamic>;
-                    userName =
-                        '${userData['firstName']} ${userData['surname']}';
+                    final fn =
+                        userData['firstName'] ?? userData['firstname'] ?? '';
+                    final sn = userData['surname'] ?? '';
+                    userName = '$fn $sn'.trim();
+                    if (userName.isEmpty) userName = 'Unknown User';
                   }
 
                   return Card(
@@ -107,7 +109,7 @@ class _AllAttendanceScreenState extends State<AllAttendanceScreen> {
                       leading: CircleAvatar(
                         backgroundColor: Colors.green,
                         child: Text(
-                          userName[0].toUpperCase(),
+                          userName.isNotEmpty ? userName[0].toUpperCase() : 'U',
                           style: const TextStyle(color: Colors.white),
                         ),
                       ),
@@ -117,7 +119,7 @@ class _AllAttendanceScreenState extends State<AllAttendanceScreen> {
                         children: [
                           Text(data['eventName'] ?? 'Attendance'),
                           Text(
-                            '${timestamp.day}/${timestamp.month}/${timestamp.year} at ${timestamp.hour}:${timestamp.minute.toString().padLeft(2, '0')}',
+                            '${date.day}/${date.month}/${date.year} at ${date.hour}:${date.minute.toString().padLeft(2, '0')}',
                             style: TextStyle(
                               fontSize: 12,
                               color: Colors.grey.shade600,

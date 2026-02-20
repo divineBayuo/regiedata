@@ -15,7 +15,7 @@ class OrganizationService {
         .join();
   }
 
-  // Create new organization
+  // Create new organization; returns the new org's id
   Future<String> createOrganization(String name, String createdBy) async {
     String code = _generateOrgCode();
 
@@ -53,7 +53,7 @@ class OrganizationService {
     return snapshot.docs.isNotEmpty;
   }
 
-  // Join organization with code
+  // Join organization with code; default = user
   Future<bool> joinOrganization(String code, String userId,
       {String role = 'user'}) async {
     try {
@@ -164,7 +164,7 @@ class OrganizationService {
     );
   }
 
-  // Check if user is admin in organization
+  // Check if user is an approved admin in organization
   Future<bool> isOrganizationAdmin(String userId, String organizationId) async {
     OrganizationMembershipModel? membership =
         await getUserMembership(userId, organizationId);
@@ -189,6 +189,7 @@ class OrganizationService {
     return null;
   }
 
+  // Look up org id by code
   Future<String?> getOrganizationIdByCode(String code) async {
     QuerySnapshot snapshot = await _firestore
         .collection('organizations')
@@ -198,5 +199,21 @@ class OrganizationService {
 
     if (snapshot.docs.isEmpty) return null;
     return snapshot.docs.first.id;
+  }
+
+  // promote pending admin to admin
+  Future<void> approveAdmin(String membershipId) async {
+    await _firestore
+        .collection('organization_members')
+        .doc(membershipId)
+        .update({'isApproved': true});
+  }
+
+  // demote an admin back to regular user
+  Future<void> revokeAdmin(String membershipId) async {
+    await _firestore
+        .collection('organization_members')
+        .doc(membershipId)
+        .update({'role': 'user', 'isApproved': false});
   }
 }
