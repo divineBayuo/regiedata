@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:regie_data/helper_functions/organization_context.dart';
 import 'package:regie_data/screens/attendance_history_screen.dart';
 import 'package:regie_data/screens/code_entry_screen.dart';
+import 'package:regie_data/screens/organization_selector_screen.dart';
 import 'package:regie_data/screens/qr_scanner_screen.dart';
 import 'package:regie_data/screens/signinpage.dart';
 import 'package:regie_data/screens/user_profile_screen.dart';
@@ -93,6 +94,11 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
         backgroundColor: Colors.green,
         foregroundColor: Colors.white,
         actions: [
+          IconButton(
+            onPressed: _switchOrganization,
+            icon: const Icon(Icons.business),
+            tooltip: 'Switch Organization',
+          ),
           IconButton(
             onPressed: () => Navigator.push(
               context,
@@ -354,6 +360,15 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  void _switchOrganization() {
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const OrganizationSelectorScreen(),
       ),
     );
   }

@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:regie_data/helper_functions/role_navigation.dart';
 import 'package:regie_data/models/organization_model.dart';
 import 'package:regie_data/services/organization_service.dart';
 
@@ -58,6 +59,7 @@ class _OrganizationSelectorScreenState
         title: const Text('Select Organization'),
         backgroundColor: Colors.green,
         foregroundColor: Colors.white,
+        automaticallyImplyLeading: false, // removes back button
       ),
       body: _isLoading
           ? const Center(
@@ -143,9 +145,13 @@ class _OrganizationSelectorScreenState
               User? user = FirebaseAuth.instance.currentUser;
               if (user == null) return;
               try {
+                // set active org
                 await _orgService.setActiveOrganization(user.uid, org.id);
+
                 if (!mounted) return;
-                Navigator.pop(context, true);
+
+                // Navigate to appropriate screen based on role in this active org
+                await navigateToOrgScreen(context, user.uid, org.id);
               } catch (e) {
                 print('Error setting active organization: $e');
                 if (!mounted) return;
@@ -241,19 +247,8 @@ class _OrganizationSelectorScreenState
 
                         Navigator.pop(context);
 
-                        await _loadOrganizations();
-
-                        if (!context.mounted) return;
-
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('Organization created successfully!'),
-                            backgroundColor: Colors.green,
-                          ),
-                        );
-
-                        // Return success to caller
-                        Navigator.pop(context, true);
+                        // Navigate to dadshboard for this new org as admin
+                        await navigateToOrgScreen(context, user.uid, orgId);
                       } catch (e) {
                         print('Error creating organization: $e');
 
@@ -367,30 +362,22 @@ class _OrganizationSelectorScreenState
                         Navigator.pop(context); // Close dialog
 
                         if (success) {
-                          await _loadOrganizations();
+                          // Get the orgid of the org we just joined
+                          final orgId =
+                              await _orgService.getOrganizationIdByCode(
+                                  codeController.text.trim());
 
-                          if (!context.mounted) return;
+                          if (orgId != null) {
+                            await _orgService.setActiveOrganization(
+                                user.uid, orgId);
 
-                          if (userRole == 'admin') {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text(
-                                    'Join request submitted! Awaiting admin approval.'),
-                                backgroundColor: Colors.orange,
-                              ),
-                            );
+                            if (!context.mounted) return;
+
+                            // Navigate to appropriate screen for this org
+                            await navigateToOrgScreen(context, user.uid, orgId);
                           } else {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content:
-                                    Text('Joined organization successfully!'),
-                                backgroundColor: Colors.green,
-                              ),
-                            );
+                            await _loadOrganizations();
                           }
-
-                          // Return success to caller
-                          Navigator.pop(context, true);
                         } else {
                           ScaffoldMessenger.of(context).showSnackBar(
                             const SnackBar(
@@ -426,3 +413,4 @@ class _OrganizationSelectorScreenState
     );
   }
 }
+

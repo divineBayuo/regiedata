@@ -10,6 +10,7 @@ import 'package:qr_flutter/qr_flutter.dart';
 import 'package:regie_data/helper_functions/organization_context.dart';
 import 'package:regie_data/screens/all_attendance_screen.dart';
 import 'package:regie_data/screens/manage_users_screen.dart';
+import 'package:regie_data/screens/organization_selector_screen.dart';
 import 'package:regie_data/screens/signinpage.dart';
 import 'package:share_plus/share_plus.dart';
 
@@ -132,6 +133,15 @@ class _AdminDashboardState extends State<AdminDashboard>
     );
   }
 
+  void _switchOrganization() {
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const OrganizationSelectorScreen(),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -153,214 +163,17 @@ class _AdminDashboardState extends State<AdminDashboard>
         ),
         actions: [
           IconButton(
+            onPressed: _switchOrganization,
+            icon: const Icon(Icons.business),
+            tooltip: 'Switch Organization',
+          ),
+          IconButton(
             onPressed: _signOut,
             icon: const Icon(Icons.logout),
+            tooltip: 'Sign Out',
           ),
         ],
       ),
-      /* body: SingleChildScrollView(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Admin welcome
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(24),
-              decoration: BoxDecoration(
-                gradient: const LinearGradient(
-                  colors: [Colors.green, Colors.lightGreen],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: const Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Icon(
-                    Icons.admin_panel_settings,
-                    color: Colors.white,
-                    size: 40,
-                  ),
-                  SizedBox(
-                    height: 12,
-                  ),
-                  Text(
-                    'Admin Dashboard',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  SizedBox(
-                    height: 4,
-                  ),
-                  Text(
-                    'Manage attendance and users',
-                    style: TextStyle(
-                      color: Colors.white70,
-                      fontSize: 14,
-                    ),
-                  )
-                ],
-              ),
-            ),
-
-            const SizedBox(
-              height: 24,
-            ),
-
-            // Stats cards
-            Row(
-              children: [
-                Expanded(
-                  child: _buildStatCard(
-                    'Total Users',
-                    _totalUsers.toString(),
-                    Icons.people,
-                    Colors.blue,
-                  ),
-                ),
-                const SizedBox(
-                  width: 8,
-                ),
-                Expanded(
-                  child: _buildStatCard(
-                    'Total Records',
-                    _totalAttendance.toString(),
-                    Icons.numbers_rounded,
-                    Colors.red,
-                  ),
-                ),
-                const SizedBox(
-                  width: 8,
-                ),
-                Expanded(
-                  child: _buildStatCard(
-                    'Total Number of Members',
-                    _totalOrgMembers.toString(),
-                    Icons.check_circle,
-                    Colors.purple,
-                  ),
-                ),
-              ],
-            ),
-
-            const SizedBox(
-              height: 12,
-            ),
-
-            Row(
-              children: [
-                Expanded(
-                  child: _buildWideStatCard(
-                    'Today\'s Attendance',
-                    _todayAttendance.toString(),
-                    Icons.today,
-                    Colors.orange,
-                  ),
-                ),
-                const SizedBox(
-                  width: 12,
-                ),
-                Expanded(
-                  child: _buildWideStatCard(
-                    'Active Sessions',
-                    _activeSessions.toString(),
-                    Icons.event_available,
-                    Colors.green,
-                  ),
-                )
-              ],
-            ),
-
-            const SizedBox(
-              height: 24,
-            ),
-
-            // Admin Actions
-            Text(
-              'Admin Actions',
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-                color: Colors.grey.shade800,
-              ),
-            ),
-            const SizedBox(
-              height: 16,
-            ),
-
-            _buildActionButton(
-              'Create Attendance Session',
-              'Generate QR code and PIN for attendance',
-              Icons.qr_code,
-              Colors.green,
-              () => _showCreateSessionDialog(context),
-            ),
-
-            const SizedBox(
-              height: 12,
-            ),
-
-            _buildActionButton(
-              'Active Sessions',
-              'View and manage active attendance sessions',
-              Icons.event_available,
-              Colors.blue,
-              () => _showActiveSessionsScreen(context),
-            ),
-
-            const SizedBox(
-              height: 12,
-            ),
-
-            _buildActionButton(
-              'View All Attendance',
-              'See all attendance records',
-              Icons.list_alt,
-              Colors.blue,
-              () => Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => const AllAttendanceScreen(),
-                ),
-              ),
-            ),
-
-            const SizedBox(
-              height: 12,
-            ),
-
-            _buildActionButton(
-              'Manage Users',
-              'View and manage user accounts',
-              Icons.people_outline,
-              Colors.indigo,
-              () => Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => const ManageUsersScreen(),
-                ),
-              ),
-            ),
-
-            const SizedBox(
-              height: 12,
-            ),
-
-            _buildActionButton(
-              'Session History',
-              'View past attendance sessions',
-              Icons.history,
-              Colors.teal,
-              () => _showSessionHistoryScreen(context),
-            ),
-          ],
-        ),
-      ), */
       body: TabBarView(
         controller: _tabController,
         children: [
@@ -510,6 +323,8 @@ class _AdminDashboardState extends State<AdminDashboard>
             ),
           ),
 
+          const SizedBox(height: 20),
+
           // Actions
           Text(
             'Admin Actions',
@@ -521,7 +336,7 @@ class _AdminDashboardState extends State<AdminDashboard>
           const SizedBox(height: 14),
 
           _buildActionButton(
-            'Create Live Sessioon',
+            'Create Live Session',
             'Generate QR Code & PIN for attendance',
             Icons.qr_code,
             Colors.green,
