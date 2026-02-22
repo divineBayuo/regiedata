@@ -751,24 +751,6 @@ class _AdminDashboardState extends State<AdminDashboard>
                             prefixIcon: Icon(Icons.event),
                           ),
                         ),
-                        const SizedBox(height: 16),
-                        TextField(
-                          controller: moneyController,
-                          decoration: const InputDecoration(
-                            labelText: 'Money Collected (GH₵) - optional',
-                            hintText: '0.00',
-                            border: OutlineInputBorder(),
-                            prefixIcon: Icon(Icons.attach_money),
-                          ),
-                          keyboardType: const TextInputType.numberWithOptions(
-                              decimal: true),
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          'Leave money field empty if no collection for this session.',
-                          style: TextStyle(
-                              fontSize: 11, color: Colors.grey.shade600),
-                        )
                       ] else ...[
                         // Show generated session details
                         RepaintBoundary(
@@ -793,9 +775,7 @@ class _AdminDashboardState extends State<AdminDashboard>
                                     fontWeight: FontWeight.w600,
                                   ),
                                 ),
-                                const SizedBox(
-                                  height: 8,
-                                ),
+                                const SizedBox(height: 8),
                                 Container(
                                   padding: const EdgeInsets.all(12),
                                   decoration: BoxDecoration(
@@ -1082,25 +1062,26 @@ class _AdminDashboardState extends State<AdminDashboard>
               }
               if (snapshot.hasError) {
                 return Center(
-                    child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const Icon(
-                      Icons.error_outline,
-                      size: 80,
-                      color: Colors.red,
-                    ),
-                    const SizedBox(height: 16),
-                    Text(
-                      'Error: ${snapshot.error}',
-                      style: const TextStyle(
-                        fontSize: 16,
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Icon(
+                        Icons.error_outline,
+                        size: 80,
                         color: Colors.red,
                       ),
-                      textAlign: TextAlign.center,
-                    )
-                  ],
-                ));
+                      const SizedBox(height: 16),
+                      Text(
+                        'Error: ${snapshot.error}',
+                        style: const TextStyle(
+                          fontSize: 16,
+                          color: Colors.red,
+                        ),
+                        textAlign: TextAlign.center,
+                      )
+                    ],
+                  ),
+                );
               }
               if (snapshot.connectionState == ConnectionState.waiting) {
                 return const Center(
@@ -1163,28 +1144,13 @@ class _AdminDashboardState extends State<AdminDashboard>
                                 size: 140,
                               ),
                               const SizedBox(height: 14),
-                              if (money != null && money > 0)
-                                Container(
-                                  padding: const EdgeInsets.all(10),
-                                  decoration: BoxDecoration(
-                                    color: Colors.teal.shade50,
-                                    borderRadius: BorderRadius.circular(8),
-                                  ),
-                                  child: Row(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      const Icon(Icons.attach_money,
-                                          color: Colors.teal, size: 18),
-                                      Text(
-                                        'GH₵ ${money.toStringAsFixed(2)} collected',
-                                        style: const TextStyle(
-                                            color: Colors.teal,
-                                            fontWeight: FontWeight.w600),
-                                      )
-                                    ],
-                                  ),
-                                ),
+
+                              // monney display/edit
+                              _buildMoneyEditor(doc.id, money),
+
                               const SizedBox(height: 12),
+
+                              // Attendance count
                               StreamBuilder<QuerySnapshot>(
                                 stream: _firestore
                                     .collection('attendance')
@@ -1194,55 +1160,23 @@ class _AdminDashboardState extends State<AdminDashboard>
                                   int count = attSnap.hasData
                                       ? attSnap.data!.docs.length
                                       : 0;
-                                  return Text(
-                                    '$count attendees',
-                                    style: TextStyle(
-                                        fontSize: 15,
-                                        color: Colors.grey.shade700,
-                                        fontWeight: FontWeight.w600),
+                                  return Container(
+                                    padding: const EdgeInsets.all(12),
+                                    decoration: BoxDecoration(
+                                        color: Colors.green.shade50,
+                                        borderRadius: BorderRadius.circular(8)),
+                                    child: Text(
+                                      '$count attendees',
+                                      style: const TextStyle(
+                                          fontSize: 18,
+                                          color: Colors.green,
+                                          fontWeight: FontWeight.bold),
+                                    ),
                                   );
                                 },
                               ),
+
                               const SizedBox(height: 14),
-                              Row(
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceEvenly,
-                                children: [
-                                  ElevatedButton.icon(
-                                    onPressed: () {
-                                      Clipboard.setData(
-                                          ClipboardData(text: data['code']));
-                                      ScaffoldMessenger.of(context)
-                                          .showSnackBar(const SnackBar(
-                                              content: Text('PIN copied')));
-                                    },
-                                    icon: const Icon(Icons.copy, size: 16),
-                                    label: const Text('Copy PIN'),
-                                    style: ElevatedButton.styleFrom(
-                                        backgroundColor: Colors.blue,
-                                        foregroundColor: Colors.white),
-                                  ),
-                                  ElevatedButton.icon(
-                                    onPressed: () async {
-                                      await _firestore
-                                          .collection('attendance_sessions')
-                                          .doc(doc.id)
-                                          .update({'active': false});
-                                      if (!context.mounted) return;
-                                      ScaffoldMessenger.of(context)
-                                          .showSnackBar(const SnackBar(
-                                              content: Text('Session ended')));
-                                      _loadStats();
-                                    },
-                                    icon: const Icon(Icons.close, size: 16),
-                                    label: const Text('End Session'),
-                                    style: ElevatedButton.styleFrom(
-                                      backgroundColor: Colors.orange,
-                                      foregroundColor: Colors.white,
-                                    ),
-                                  )
-                                ],
-                              ),
 
                               // PIN Display
                               Container(
@@ -1279,56 +1213,52 @@ class _AdminDashboardState extends State<AdminDashboard>
                                   ],
                                 ),
                               ),
-                              const SizedBox(
-                                height: 16,
-                              ),
+                              const SizedBox(height: 14),
 
-                              // Real-time attendance count
-                              StreamBuilder<QuerySnapshot>(
-                                stream: _firestore
-                                    .collection('attendance')
-                                    .where('sessionId', isEqualTo: doc.id)
-                                    .snapshots(),
-                                builder: (context, attendanceSnapshot) {
-                                  int count = attendanceSnapshot.hasData
-                                      ? attendanceSnapshot.data!.docs.length
-                                      : 0;
-                                  return Text(
-                                    '$count attendees',
-                                    style: TextStyle(
-                                      fontSize: 16,
-                                      color: Colors.grey.shade700,
-                                      fontWeight: FontWeight.w600,
+                              // Action Buttons
+                              Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceEvenly,
+                                children: [
+                                  ElevatedButton.icon(
+                                    onPressed: () {
+                                      Clipboard.setData(
+                                          ClipboardData(text: data['code']));
+                                      ScaffoldMessenger.of(context)
+                                          .showSnackBar(const SnackBar(
+                                              content: Text('PIN copied')));
+                                    },
+                                    icon: const Icon(Icons.copy, size: 16),
+                                    label: const Text('Copy PIN'),
+                                    style: ElevatedButton.styleFrom(
+                                      foregroundColor: Colors.white,
+                                      backgroundColor: Colors.blue,
                                     ),
-                                  );
-                                },
-                              ),
-                              const SizedBox(
-                                height: 16,
-                              ),
+                                  ),
+                                  ElevatedButton.icon(
+                                    onPressed: () async {
+                                      await _firestore
+                                          .collection('attendance_sessions')
+                                          .doc(doc.id)
+                                          .update({'active': false});
 
-                              // Close Session Button
-                              ElevatedButton.icon(
-                                onPressed: () async {
-                                  await _firestore
-                                      .collection('attendance_sessions')
-                                      .doc(doc.id)
-                                      .update({'active': false});
-
-                                  if (!context.mounted) return;
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(
-                                      content: Text('Session Closed'),
+                                      if (!context.mounted) return;
+                                      ScaffoldMessenger.of(context)
+                                          .showSnackBar(
+                                        const SnackBar(
+                                          content: Text('Session ended'),
+                                        ),
+                                      );
+                                      _loadStats();
+                                    },
+                                    icon: const Icon(Icons.close, size: 16),
+                                    label: const Text('End Session'),
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: Colors.orange,
+                                      foregroundColor: Colors.white,
                                     ),
-                                  );
-                                  _loadStats();
-                                },
-                                icon: const Icon(Icons.close),
-                                label: const Text('Close Session'),
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: Colors.orange,
-                                  foregroundColor: Colors.white,
-                                ),
+                                  ),
+                                ],
                               ),
                             ],
                           ),
@@ -1342,6 +1272,92 @@ class _AdminDashboardState extends State<AdminDashboard>
           ),
         ),
       ),
+    );
+  }
+
+  // Money editor widget for active sessions
+  Widget _buildMoneyEditor(String sessionId, double? currentMoney) {
+    final controller =
+        TextEditingController(text: currentMoney?.toStringAsFixed(2) ?? '');
+    bool isEditing = false;
+
+    return StatefulBuilder(
+      builder: (context, setWidgetState) {
+        return Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: Colors.teal.shade50,
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Column(
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(Icons.attach_money, color: Colors.teal, size: 18),
+                  const SizedBox(width: 4),
+                  if (!isEditing)
+                    Text(
+                      'GH₵ ${(currentMoney ?? 0).toStringAsFixed(2)} collected',
+                      style: const TextStyle(
+                        color: Colors.teal,
+                        fontWeight: FontWeight.w600,
+                        fontSize: 15,
+                      ),
+                    )
+                  else
+                    SizedBox(
+                      width: 120,
+                      child: TextField(
+                        controller: controller,
+                        keyboardType: const TextInputType.numberWithOptions(
+                            decimal: true),
+                        decoration: const InputDecoration(
+                          isDense: true,
+                          contentPadding: EdgeInsets.all(8),
+                          border: OutlineInputBorder(),
+                          prefixText: 'GH₵ ',
+                        ),
+                        autofocus: true,
+                      ),
+                    ),
+                  const SizedBox(width: 8),
+                  IconButton(
+                    onPressed: () async {
+                      if (isEditing) {
+                        // Save
+                        final newMoney = double.tryParse(controller.text);
+                        if (newMoney != null) {
+                          await _firestore
+                              .collection('attendance_sessions')
+                              .doc(sessionId)
+                              .update({'moneyCollected': newMoney});
+                          _loadStats();
+                        }
+                      }
+                      setWidgetState(() => isEditing = !isEditing);
+                    },
+                    icon: Icon(isEditing ? Icons.check : Icons.edit, size: 18),
+                    color: Colors.teal,
+                    tooltip: isEditing ? 'Save' : 'Edit',
+                  )
+                ],
+              ),
+              if (isEditing)
+                Padding(
+                  padding: const EdgeInsets.only(top: 4),
+                  child: Text(
+                    'Enter the amount and tap ✓ to save',
+                    style: TextStyle(
+                      fontSize: 10,
+                      color: Colors.grey.shade600,
+                    ),
+                  ),
+                )
+            ],
+          ),
+        );
+      },
     );
   }
 
