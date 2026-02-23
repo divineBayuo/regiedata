@@ -35,6 +35,15 @@ class _AdminDashboardState extends State<AdminDashboard>
   // Monthly analytics: map of YYYY-MM -> total amount
   Map<String, double> _monthlyMoney = {};
 
+  // Attendance analytics
+  Map<String, int> _weeklyAttendance = {}; // YYYY-Www
+  Map<String, int> _monthlyAttendance = {}; // YYYY-MM
+  Map<String, int> _yearlyAttendance = {}; // YYYY
+
+  // Analytics view toggle
+  String _analyticsView = 'money'; //'money'/'attendance'
+  String _attendancePeriod = 'month'; //'week'/'month'/'day'
+
   @override
   void initState() {
     super.initState();
@@ -112,6 +121,46 @@ class _AdminDashboardState extends State<AdminDashboard>
       monthlyMoney.entries.toList()..sort((a, b) => a.key.compareTo(b.key)),
     );
 
+    // Process attendance analytics
+    Map<String, int> weeklyAtt = {};
+    Map<String, int> monthlyAtt = {};
+    Map<String, int> yearlyAtt = {};
+
+    for (var doc in attendanceSnapshot.docs) {
+      final data = doc.data();
+      final timestamp = data['timestamp'];
+      if (timestamp is Timestamp) {
+        final date = timestamp.toDate();
+
+        // Weekly (ISO week number)
+        final weekKey = _getWeekKey(date);
+        weeklyAtt[weekKey] = (weeklyAtt[weekKey] ?? 0) + 1;
+
+        // Monthly
+        final monthKey =
+            '${date.year}-${date.month.toString().padLeft(2, '0')}';
+        monthlyAtt[monthKey] = (monthlyAtt[monthKey] ?? 0) + 1;
+
+        // Yearly
+        final yearKey = '${date.year}';
+        yearlyAtt[yearKey] = (yearlyAtt[yearKey] ?? 0) + 1;
+      }
+    }
+
+    // Sort attendance maps
+    final sortedWeeklyAtt = Map.fromEntries(weeklyAtt.entries.toList()
+      ..sort(
+        (a, b) => a.key.compareTo(b.key),
+      ));
+    final sortedMonthlyAtt = Map.fromEntries(weeklyAtt.entries.toList()
+      ..sort(
+        (a, b) => a.key.compareTo(b.key),
+      ));
+    final sortedYearlyAtt = Map.fromEntries(weeklyAtt.entries.toList()
+      ..sort(
+        (a, b) => a.key.compareTo(b.key),
+      ));
+
     setState(() {
       _totalAttendance = attendanceSnapshot.docs.length;
       _todayAttendance = todaySnapshot.docs.length;
@@ -119,7 +168,17 @@ class _AdminDashboardState extends State<AdminDashboard>
       _totalOrgMembers = membersSnapshot.docs.length;
       _totalMoneyCollected = totalMoney;
       _monthlyMoney = sortedMonthly;
+      _monthlyAttendance = sortedMonthlyAtt;
+      _weeklyAttendance = sortedWeeklyAtt;
+      _yearlyAttendance = sortedYearlyAtt;
     });
+  }
+
+  String _getWeekKey(DateTime date) {
+    final dayOfYear =
+        int.parse("${date.difference(DateTime(date.year, 1, 1)).inDays + 1}");
+    final weekNumber = ((dayOfYear - date.weekday + 10) / 7).floor();
+    return '${date.year}-W${weekNumber.toString().padLeft(2, '0')}';
   }
 
   Future<void> _signOut() async {
@@ -387,140 +446,463 @@ class _AdminDashboardState extends State<AdminDashboard>
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            'Money Collected / Month',
-            style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: Colors.grey.shade800),
-          ),
-          const SizedBox(height: 16),
-          if (_monthlyMoney.isEmpty)
-            Container(
-              padding: const EdgeInsets.all(32),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: Colors.grey.shade300),
-              ),
-              child: Center(
-                child: Column(
-                  children: [
-                    Icon(
-                      Icons.bar_chart,
-                      size: 60,
-                      color: Colors.grey.shade400,
-                    ),
-                    const SizedBox(height: 12),
-                    Text(
-                      'No financial data yet',
-                      style: TextStyle(color: Colors.grey.shade600),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      'Record money collected when creating sessions',
-                      style:
-                          TextStyle(fontSize: 12, color: Colors.grey.shade500),
-                    ),
-                  ],
-                ),
-              ),
-            )
-          else
-            _buildBarChart(),
-
-          const SizedBox(height: 24),
-
-          // Monthly breakdown table
-          if (_monthlyMoney.isNotEmpty) ...[
-            Text(
-              'Monthly Breakdown',
-              style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.grey.shade800),
+          // Analytics type toggle
+          Container(
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: Colors.grey.shade300),
             ),
-            const SizedBox(height: 12),
-            Container(
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: Colors.grey.shade300),
-              ),
-              child: Column(
-                children: _monthlyMoney.entries.map((entry) {
-                  final parts = entry.key.split('-');
-                  final monthName = _monthName(int.parse(parts[1]));
-                  final year = parts[0];
-                  return ListTile(
-                    leading: Container(
-                      width: 40,
-                      height: 40,
-                      decoration: BoxDecoration(
-                        color: Colors.teal.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: const Icon(Icons.calendar_month,
-                          color: Colors.teal, size: 20),
-                    ),
-                    title: Text('$monthName $year'),
-                    trailing: Text(
-                      'GH₵ ${entry.value.toStringAsFixed(2)}',
-                      style: const TextStyle(
-                          fontWeight: FontWeight.bold,
-                          color: Colors.teal,
-                          fontSize: 15),
-                    ),
-                  );
-                }).toList(),
+            child: Row(
+              children: [
+                Expanded(
+                  child: _buildAnalyticsToggle(
+                    'Money',
+                    Icons.attach_money,
+                    'money',
+                  ),
+                ),
+                Expanded(
+                  child: _buildAnalyticsToggle(
+                    'Attendance',
+                    Icons.people,
+                    'attendance',
+                  ),
+                )
+              ],
+            ),
+          ),
+
+          const SizedBox(height: 20),
+
+          // Show selected analytics
+          if (_analyticsView == 'money')
+            _buildMoneyAnalytics()
+          else
+            _buildAttendanceAnalytics(),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildAnalyticsToggle(String label, IconData icon, String value) {
+    final isSelected = _analyticsView == value;
+    return InkWell(
+      onTap: () => setState(() => _analyticsView = value),
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 16),
+        decoration: BoxDecoration(
+          color: isSelected ? Colors.green : Colors.transparent,
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              icon,
+              color: isSelected ? Colors.white : Colors.grey.shade600,
+              size: 20,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              label,
+              style: TextStyle(
+                color: isSelected ? Colors.white : Colors.grey.shade600,
+                fontWeight: FontWeight.bold,
+                fontSize: 15,
               ),
             )
           ],
+        ),
+      ),
+    );
+  }
 
-          const SizedBox(height: 24),
-
-          // Total summary
+  Widget _buildMoneyAnalytics() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Money Collected / Month',
+          style: TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+            color: Colors.grey.shade800,
+          ),
+        ),
+        const SizedBox(height: 16),
+        if (_monthlyMoney.isEmpty)
           Container(
-            padding: const EdgeInsets.all(20),
+            padding: const EdgeInsets.all(32),
             decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                colors: [Colors.teal, Colors.green],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
+              color: Colors.white,
               borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: Colors.grey.shade300),
             ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                const Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Grand Total',
-                      style: TextStyle(
-                        color: Colors.white70,
-                        fontSize: 13,
-                      ),
+            child: Center(
+              child: Column(
+                children: [
+                  Icon(
+                    Icons.bar_chart,
+                    size: 60,
+                    color: Colors.grey.shade400,
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    'No financial data yet',
+                    style: TextStyle(color: Colors.grey.shade600),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'Record money collected when creating sessions',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Colors.grey.shade500,
                     ),
-                    Text(
-                      'All Time Collections',
-                      style: TextStyle(
-                        color: Colors.white,
+                  )
+                ],
+              ),
+            ),
+          )
+        else
+          _buildMoneyBarChart(),
+
+        const SizedBox(height: 24),
+
+        // Monthly breakdown table
+        if (_monthlyMoney.isNotEmpty) ...[
+          Text(
+            'Monthly Breakdown',
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+              color: Colors.grey.shade800,
+            ),
+          ),
+          const SizedBox(height: 12),
+          Container(
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: Colors.grey.shade300),
+            ),
+            child: Column(
+              children: _monthlyMoney.entries.map((entry) {
+                final parts = entry.key.split('-');
+                final monthName = _monthName(int.parse(parts[1]));
+                final year = parts[0];
+                return ListTile(
+                  leading: Container(
+                    width: 40,
+                    height: 40,
+                    decoration: BoxDecoration(
+                      color: Colors.teal.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: const Icon(Icons.calendar_month,
+                        color: Colors.teal, size: 20),
+                  ),
+                  title: Text('$monthName $year'),
+                  trailing: Text(
+                    'GH₵ ${entry.value.toStringAsFixed(2)}',
+                    style: const TextStyle(
                         fontWeight: FontWeight.bold,
-                        fontSize: 16,
-                      ),
+                        color: Colors.teal,
+                        fontSize: 15),
+                  ),
+                );
+              }).toList(),
+            ),
+          )
+        ],
+
+        const SizedBox(height: 24),
+
+        // total summary
+        Container(
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            gradient: const LinearGradient(
+              colors: [Colors.teal, Colors.green],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Grand Total',
+                    style: TextStyle(
+                      color: Colors.white70,
+                      fontSize: 13,
                     ),
-                  ],
-                ),
-                Text(
-                  'GH₵ ${_totalMoneyCollected.toStringAsFixed(2)}',
-                  style: const TextStyle(
+                  ),
+                  Text(
+                    'All Time Collection',
+                    style: TextStyle(
                       color: Colors.white,
+                      fontSize: 16,
                       fontWeight: FontWeight.bold,
-                      fontSize: 24),
-                )
-              ],
+                    ),
+                  )
+                ],
+              ),
+              Text(
+                'GH₵ ${_totalMoneyCollected.toStringAsFixed(2)}',
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 24,
+                ),
+              )
+            ],
+          ),
+        )
+      ],
+    );
+  }
+
+  Widget _buildAttendanceAnalytics() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Period selector
+        Row(
+          children: [
+            Text(
+              'Attendance Trends',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: Colors.grey.shade800,
+              ),
+            ),
+            const Spacer(),
+            _buildPeriodChip('Week', 'week'),
+            const SizedBox(width: 8),
+            _buildPeriodChip('Month', 'month'),
+            const SizedBox(width: 8),
+            _buildPeriodChip('Year', 'year'),
+          ],
+        ),
+
+        const SizedBox(height: 16),
+
+        // Chart
+        if (_getCurrentAttendanceData().isEmpty)
+          Container(
+            padding: const EdgeInsets.all(32),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: Colors.grey.shade300),
+            ),
+            child: Center(
+              child: Column(
+                children: [
+                  Icon(
+                    Icons.bar_chart,
+                    size: 60,
+                    color: Colors.grey.shade400,
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    'No attendance data yet',
+                    style: TextStyle(color: Colors.grey.shade600),
+                  )
+                ],
+              ),
+            ),
+          )
+        else
+          _buildAttendanceBarChart(),
+
+        const SizedBox(height: 24),
+
+        // Attendance stats cards
+        Row(
+          children: [
+            Expanded(
+              child: _buildAttendanceStatCard(
+                'Total',
+                _totalAttendance.toString(),
+                Icons.people,
+                Colors.blue,
+              ),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: _buildAttendanceStatCard(
+                'Average',
+                _getAverageAttendance(),
+                Icons.trending_up,
+                Colors.orange,
+              ),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: _buildAttendanceStatCard(
+                'Peak',
+                _getPeakAttendance(),
+                Icons.star,
+                Colors.purple,
+              ),
+            ),
+          ],
+        ),
+
+        const SizedBox(width: 24),
+
+        // Detailed breakdown
+        if (_getCurrentAttendanceData().isNotEmpty) ...[
+          Text(
+            'Detailed Breakdown',
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+              color: Colors.grey.shade800,
+            ),
+          ),
+          const SizedBox(height: 12),
+          Container(
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: Colors.grey.shade300),
+            ),
+            child: Column(
+              children: _getCurrentAttendanceData().entries.map((entry) {
+                return ListTile(
+                  leading: Container(
+                    width: 40,
+                    height: 40,
+                    decoration: BoxDecoration(
+                      color: Colors.blue.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: const Icon(
+                      Icons.event,
+                      color: Colors.blue,
+                      size: 20,
+                    ),
+                  ),
+                  title: Text(_formatPeriodLabel(entry.key)),
+                  trailing: Chip(
+                    label: Text(
+                      '${entry.value}',
+                      style: const TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                    backgroundColor: Colors.blue.shade50,
+                  ),
+                );
+              }).toList(),
+            ),
+          )
+        ]
+      ],
+    );
+  }
+
+  Widget _buildPeriodChip(String label, String value) {
+    final isSelected = _attendancePeriod == value;
+    return InkWell(
+      onTap: () => setState(() => _attendancePeriod = value),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        decoration: BoxDecoration(
+          color: isSelected ? Colors.blue : Colors.grey.shade200,
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            color: isSelected ? Colors.white : Colors.grey.shade700,
+            fontWeight: FontWeight.w600,
+            fontSize: 12,
+          ),
+        ),
+      ),
+    );
+  }
+
+  Map<String, int> _getCurrentAttendanceData() {
+    switch (_attendancePeriod) {
+      case 'week':
+        return _weeklyAttendance;
+      case 'year':
+        return _yearlyAttendance;
+      default:
+        return _monthlyAttendance;
+    }
+  }
+
+  String _formatPeriodLabel(String key) {
+    if (_attendancePeriod == 'week') {
+      // format change: YYYY-W## -> Week #, YYYY
+      final parts = key.split('-W');
+      return 'Week ${int.parse(parts[1])}, ${parts[0]}';
+    } else if (_attendancePeriod == 'month') {
+      // format change: YYYY-MM -> Month YYYY
+      final parts = key.split('-');
+      return '${_monthName(int.parse(parts[1]))} ${parts[0]}';
+    } else {
+      // keep year as it is
+      return key;
+    }
+  }
+
+  String _getAverageAttendance() {
+    final data = _getCurrentAttendanceData();
+    if (data.isEmpty) return '0';
+    final total = data.values.reduce((a, b) => a + b);
+    final avg = total / data.length;
+    return avg.toStringAsFixed(0);
+  }
+
+  String _getPeakAttendance() {
+    final data = _getCurrentAttendanceData();
+    if (data.isEmpty) return '0';
+    final peak = data.values.reduce((a, b) => a > b ? a : b).toString();
+    return peak;
+  }
+
+  Widget _buildAttendanceStatCard(
+    String title,
+    String value,
+    IconData icon,
+    Color color,
+  ) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.grey.shade300),
+      ),
+      child: Column(
+        children: [
+          Icon(
+            icon,
+            color: color,
+            size: 24,
+          ),
+          const SizedBox(height: 8),
+          Text(
+            value,
+            style: const TextStyle(
+              fontSize: 22,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          Text(
+            title,
+            style: TextStyle(
+              fontSize: 11,
+              color: Colors.grey.shade600,
             ),
           )
         ],
@@ -528,7 +910,92 @@ class _AdminDashboardState extends State<AdminDashboard>
     );
   }
 
-  Widget _buildBarChart() {
+  Widget _buildAttendanceBarChart() {
+    final data = _getCurrentAttendanceData();
+    if (data.isEmpty) return const SizedBox.shrink();
+
+    final maxValue = data.values.reduce((a, b) => a > b ? a : b);
+    final entries = data.entries.toList();
+
+    // take last 12 entries max for better visualization
+    final displayEntries =
+        entries.length > 12 ? entries.sublist(entries.length - 12) : entries;
+
+    return Container(
+      height: 220,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.grey.shade300),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: displayEntries.map((entry) {
+          final heightFraction = maxValue > 0 ? entry.value / maxValue : 0.0;
+          final label = _getShortLabel(entry.key);
+
+          return Expanded(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 2),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  Text(
+                    '${entry.value}',
+                    style: const TextStyle(
+                        fontSize: 9, fontWeight: FontWeight.bold),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 4),
+                  AnimatedContainer(
+                    duration: const Duration(milliseconds: 500),
+                    height: (heightFraction * 130).clamp(4.0, 130.0),
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(
+                        colors: [Colors.blue, Colors.lightBlue],
+                        begin: Alignment.bottomCenter,
+                        end: Alignment.topCenter,
+                      ),
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    label,
+                    style: const TextStyle(
+                      fontSize: 9,
+                      fontWeight: FontWeight.w600,
+                    ),
+                    textAlign: TextAlign.center,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  )
+                ],
+              ),
+            ),
+          );
+        }).toList(),
+      ),
+    );
+  }
+
+  String _getShortLabel(String key) {
+    if (_attendancePeriod == 'week') {
+      // YYYY-W## -> W#
+      final parts = key.split('-W');
+      return 'W${int.parse(parts[1])}';
+    } else if (_attendancePeriod == 'month') {
+      // YYYY-MM -> Month
+      final parts = key.split('-');
+      return _monthName(int.parse(parts[1])).substring(0, 3);
+    }else {
+      // YYYY -> 'YY
+      return " '${key.substring(2)}";
+    }
+  }
+
+  Widget _buildMoneyBarChart() {
     if (_monthlyMoney.isEmpty) return const SizedBox.shrink();
 
     final maxValue = _monthlyMoney.values.reduce((a, b) => a > b ? a : b);
