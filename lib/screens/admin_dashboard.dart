@@ -59,7 +59,6 @@ class _AdminDashboardState extends State<AdminDashboard>
 
   Future<void> _loadStats() async {
     String? orgId = await OrganizationContext.getCurrentOrganizationId();
-    if (orgId == null) return;
 
     // Get organization members count
     final membersSnapshot = await _firestore
@@ -1505,7 +1504,6 @@ class _AdminDashboardState extends State<AdminDashboard>
   // Active Sessions Screen
   void _showActiveSessionsScreen(BuildContext context) async {
     String? orgId = await OrganizationContext.getCurrentOrganizationId();
-    if (orgId == null) return;
 
     Navigator.push(
       context,
@@ -1832,7 +1830,6 @@ class _AdminDashboardState extends State<AdminDashboard>
   void _showSessionHistoryScreen(BuildContext context) async {
     String? orgId = await OrganizationContext.getCurrentOrganizationId();
     print('DEBUG: Current Org ID: $orgId');
-    if (orgId == null) return;
 
     Navigator.push(
       context,
