@@ -105,12 +105,6 @@ class _QRScannerScreenState extends State<QRScannerScreen> {
 
       // Get current user's organization
       String? orgId = await OrganizationContext.getCurrentOrganizationId();
-      if (orgId == null) {
-        if (!mounted) return;
-        _showErrorDialog('Error', 'No organization selected');
-        setState(() => _isProcessing = false);
-        return;
-      }
 
       // Verify the code exists and belongs to user's organization in Firestore
       QuerySnapshot sessionQuery = await FirebaseFirestore.instance

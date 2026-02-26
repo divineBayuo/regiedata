@@ -533,7 +533,7 @@ class _SignuppageState extends State<Signuppage> {
                               height: 6,
                             ),
                             DropdownButtonFormField<String>(
-                                initialValue: _selectedGender,
+                                value: _selectedGender,
                                 decoration: InputDecoration(
                                     contentPadding: const EdgeInsets.symmetric(
                                         horizontal: 20, vertical: 20),

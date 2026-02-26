@@ -134,11 +134,6 @@ class _CodeEntryScreenState extends State<CodeEntryScreen> {
     try {
       // Get current user's organization
       String? orgId = await OrganizationContext.getCurrentOrganizationId();
-      if (orgId == null) {
-        _showSnackBar('No organization selected');
-        setState(() => _isLoading = false);
-        return;
-      }
 
       // Find an active session with this code in this org
       QuerySnapshot sessionQuery = await FirebaseFirestore.instance

@@ -207,10 +207,11 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
 
   /// View Profile Mode
   Widget _buildViewProfile() {
-    if (_userData == null)
+    if (_userData == null) {
       return const Center(
         child: Text('No Data Found'),
       );
+    }
     final data = _userData!;
     final firstname = data['firstName'] ?? data['firstname'] ?? 'Unknown';
     final surname = data['surnname'] ?? '';
