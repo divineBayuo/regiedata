@@ -264,7 +264,7 @@ class _GoogleProfileCompletionScreenState
 
                 const SizedBox(height: 24),
 
-                // Account Type
+                /* // Account Type
                 _buildSectionHeader('Account Type'),
                 const SizedBox(height: 10),
                 Container(
@@ -306,7 +306,7 @@ class _GoogleProfileCompletionScreenState
                 const SizedBox(height: 24),
                 const Divider(),
                 const SizedBox(height: 24),
-
+ */
                 // Personal information
                 _buildSectionHeader('Personal Information'),
                 const SizedBox(height: 16),
