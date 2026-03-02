@@ -398,10 +398,13 @@ class _ManageUsersScreenState extends State<ManageUsersScreen>
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(email),
-            if (userData['department'] != null)
+            if (role != null)
               Text(
-                '${userData['department']}',
-                style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+                role,
+                style: TextStyle(
+                  fontSize: 12,
+                  color: Colors.grey.shade600,
+                ),
               )
           ],
         ),
@@ -412,7 +415,7 @@ class _ManageUsersScreenState extends State<ManageUsersScreen>
               child: Row(
                 children: [
                   Icon(Icons.visibility, size: 20),
-                  SizedBox(height: 8),
+                  SizedBox(height: 12),
                   Text('View Details'),
                 ],
               ),
@@ -421,8 +424,12 @@ class _ManageUsersScreenState extends State<ManageUsersScreen>
               value: 'edit',
               child: Row(
                 children: [
-                  Icon(Icons.edit, size: 20),
-                  SizedBox(height: 8),
+                  Icon(
+                    Icons.edit,
+                    size: 20,
+                    color: Colors.blue,
+                  ),
+                  SizedBox(height: 12),
                   Text('Edit'),
                 ],
               ),
@@ -434,9 +441,9 @@ class _ManageUsersScreenState extends State<ManageUsersScreen>
                   Icon(
                     Icons.admin_panel_settings,
                     size: 20,
-                    color: Colors.green,
+                    color: Colors.teal,
                   ),
-                  SizedBox(height: 8),
+                  SizedBox(height: 12),
                   Text('Promote to Admin'),
                 ],
               ),
@@ -447,7 +454,7 @@ class _ManageUsersScreenState extends State<ManageUsersScreen>
                 child: Row(
                   children: [
                     Icon(Icons.check, size: 20, color: Colors.green),
-                    SizedBox(height: 8),
+                    SizedBox(height: 12),
                     Text('Approve Admin'),
                   ],
                 ),
@@ -458,7 +465,7 @@ class _ManageUsersScreenState extends State<ManageUsersScreen>
                 child: Row(
                   children: [
                     Icon(Icons.close, size: 20, color: Colors.red),
-                    SizedBox(height: 8),
+                    SizedBox(height: 12),
                     Text('Reject'),
                   ],
                 ),
@@ -468,8 +475,12 @@ class _ManageUsersScreenState extends State<ManageUsersScreen>
                 value: 'revoke',
                 child: Row(
                   children: [
-                    Icon(Icons.remove_circle, size: 20, color: Colors.orange),
-                    SizedBox(height: 8),
+                    Icon(
+                      Icons.remove_circle,
+                      size: 20,
+                      color: Colors.orange,
+                    ),
+                    SizedBox(height: 12),
                     Text('Revoke Admin'),
                   ],
                 ),
@@ -478,8 +489,12 @@ class _ManageUsersScreenState extends State<ManageUsersScreen>
               value: 'delete',
               child: Row(
                 children: [
-                  Icon(Icons.delete, size: 20, color: Colors.red),
-                  SizedBox(height: 8),
+                  Icon(
+                    Icons.delete,
+                    size: 20,
+                    color: Colors.red,
+                  ),
+                  SizedBox(height: 12),
                   Text('Remove from Org'),
                 ],
               ),
