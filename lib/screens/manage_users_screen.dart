@@ -427,6 +427,20 @@ class _ManageUsersScreenState extends State<ManageUsersScreen>
                 ],
               ),
             ),
+            const PopupMenuItem(
+              value: 'promote',
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.admin_panel_settings,
+                    size: 20,
+                    color: Colors.green,
+                  ),
+                  SizedBox(height: 8),
+                  Text('Promote to Admin'),
+                ],
+              ),
+            ),
             if (role == 'admin' && !isApproved)
               const PopupMenuItem(
                 value: 'approve',
@@ -478,6 +492,9 @@ class _ManageUsersScreenState extends State<ManageUsersScreen>
                 break;
               case 'edit':
                 _showEditMemberDialog(membershipId, userData);
+                break;
+              case 'promote':
+                _promoteToAdmin(membershipId);
                 break;
               case 'approve':
                 _approveAdmin(membershipId);
@@ -1045,6 +1062,45 @@ class _ManageUsersScreenState extends State<ManageUsersScreen>
         ),
       ),
     );
+  }
+
+  Future<void> _promoteToAdmin(String membershipId) async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Promote Admin'),
+        content: const Text(
+            'Promote this user to admin? (They will need approval.)'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Promote'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm != true) return;
+
+    await _firestore
+        .collection('organization_members')
+        .doc(membershipId)
+        .update({
+      'role': 'admin',
+      'isApproved': false,
+    });
+
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('User promoted (pending approval)'),
+        ),
+      );
+    }
   }
 
   Future<void> _approveAdmin(String membershipId) async {

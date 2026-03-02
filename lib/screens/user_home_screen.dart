@@ -217,8 +217,11 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
                 'Scan to mark your attendance',
                 Icons.qr_code_scanner,
                 Colors.green,
-                () => Navigator.push(context,
-                    MaterialPageRoute(builder: (_) => const QRScannerScreen())),
+                () => Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                            builder: (_) => const QRScannerScreen()))
+                    .then((_) => _loadUserData()),
               ),
 
               const SizedBox(height: 10),
@@ -228,8 +231,11 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
                 'Type the sesssion PIN to check in',
                 Icons.pin,
                 Colors.blue,
-                () => Navigator.push(context,
-                    MaterialPageRoute(builder: (_) => const CodeEntryScreen())),
+                () => Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                            builder: (_) => const CodeEntryScreen()))
+                    .then((_) => _loadUserData()),
               ),
 
               const SizedBox(height: 10),
