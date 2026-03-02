@@ -384,25 +384,6 @@ class _SignuppageState extends State<Signuppage> {
   }
 
   @override
-  /* void dispose() {
-    _surnameController.dispose();
-    _firstnameController.dispose();
-    _othernameController.dispose();
-    _familyController.dispose();
-    _departmentController.dispose();
-    _phonenumberController.dispose();
-    _residenceController.dispose();
-    _occupationController.dispose();
-    _placeofworkController.dispose();
-    _placeofschoolController.dispose();
-    _courseofstudyController.dispose();
-    _emailController.dispose();
-    _passwordController.dispose();
-    _confirmpasswordController.dispose();
-    super.dispose();
-  }
- */
-  @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
@@ -440,7 +421,7 @@ class _SignuppageState extends State<Signuppage> {
                       height: 30,
                     ),
 
-                    // Role selection
+                    /* // Role selection
                     _buildSectionHeader('Account Type'),
                     const SizedBox(
                       height: 16,
@@ -490,7 +471,7 @@ class _SignuppageState extends State<Signuppage> {
                     const SizedBox(
                       height: 20,
                     ),
-
+ */
                     // Personal information
                     _buildSectionHeader('Personal Information'),
                     const SizedBox(
