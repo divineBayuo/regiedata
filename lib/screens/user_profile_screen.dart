@@ -42,14 +42,24 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) return;
 
-    final doc = await _firestore.collection('users').doc(user.uid).get();
-    if (doc.exists && mounted) {
-      final data = doc.data() as Map<String, dynamic>;
-      setState(() {
-        _userData = data;
-        _isLoading = false;
-      });
-      _initControllers(data);
+    try {
+      final doc = await _firestore.collection('users').doc(user.uid).get();
+      if (doc.exists && mounted) {
+        final data = doc.data() as Map<String, dynamic>;
+        setState(() {
+          _userData = data;
+          _isLoading = false;
+        });
+        _initControllers(data);
+      }
+    } catch (e) {
+      debugPrint('Error loading profile" $e');
+      if (mounted) {
+        setState(() => _isLoading = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error loading profile: $e')),
+        );
+      }
     }
   }
 
@@ -108,12 +118,12 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
 
     try {
       await _firestore.collection('users').doc(user.uid).update({
-        'firstName': _firstnameController.text.trim(),
+        'firstname': _firstnameController.text.trim(),
         'surname': _surnameController.text.trim(),
-        'otherName': _othernameController.text.trim().isEmpty
+        'othername': _othernameController.text.trim().isEmpty
             ? null
             : _othernameController.text.trim(),
-        'phone_number': _phoneNumberController.text.trim(),
+        'phoneNumber': _phoneNumberController.text.trim(),
         'residence': _residenceController.text.trim().isEmpty
             ? null
             : _residenceController.text.trim(),
@@ -151,6 +161,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
         backgroundColor: Colors.green,
       ));
     } catch (e) {
+      debugPrint('Error saving profile: $e');
       if (!mounted) return;
       setState(() => _isSaving = false);
       ScaffoldMessenger.of(context).showSnackBar(
@@ -185,9 +196,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
         ],
       ),
       body: _isLoading
-          ? const Center(
-              child: CircularProgressIndicator(),
-            )
+          ? const Center(child: CircularProgressIndicator())
           : Stack(
               children: [
                 _isEditing ? _buildEditForm() : _buildViewProfile(),
@@ -195,9 +204,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                   Container(
                     color: Colors.black26,
                     child: const Center(
-                      child: CircularProgressIndicator(
-                        color: Colors.green,
-                      ),
+                      child: CircularProgressIndicator(color: Colors.green),
                     ),
                   )
               ],
@@ -208,13 +215,11 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
   /// View Profile Mode
   Widget _buildViewProfile() {
     if (_userData == null) {
-      return const Center(
-        child: Text('No Data Found'),
-      );
+      return const Center(child: Text('No Data Found'));
     }
     final data = _userData!;
-    final firstname = data['firstName'] ?? data['firstname'] ?? 'Unknown';
-    final surname = data['surnname'] ?? '';
+    final firstname = data['firstname'] ?? data['firstName'] ?? '';
+    final surname = data['surname'] ?? '';
     final fullName = '$firstname $surname'.trim();
     final initials = fullName.isNotEmpty
         ? fullName
@@ -261,7 +266,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        fullName,
+                        fullName.isNotEmpty ? fullName : 'User',
                         style: const TextStyle(
                             color: Colors.white,
                             fontSize: 20,
@@ -282,7 +287,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
 
           _sectionCard('Personal Information', [
             _infoRow(
-                'Other Name', data['otherName'] ?? data['othername'] ?? '-'),
+                'Other Name', data['othername'] ?? data['otherName'] ?? '-'),
             _infoRow('Gender', data['gender']),
             _infoRow('Date of Birth', _formatDob(data['dateOfBirth'])),
           ]),
@@ -291,7 +296,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
 
           _sectionCard('Contact Information', [
             _infoRow(
-                'Phone Number', data['phone_number'] ?? data['phoneNumber']),
+                'Phone Number', data['phoneNumber'] ?? data['phone_number']),
             _infoRow('Residence', data['residence']),
           ]),
 
@@ -338,7 +343,10 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
 
   Widget _sectionCard(String title, List<Widget> children) {
     // Filter empty rows
-    final nonEmpty = children.whereType<Widget>().toList();
+    final nonEmpty =
+        children.where((w) => w is! SizedBox || w.key != null).toList();
+    if (nonEmpty.isEmpty) return const SizedBox.shrink();
+
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(16),
@@ -366,7 +374,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
   }
 
   Widget _infoRow(String label, dynamic value) {
-    if (value == null || value.toString().isEmpty) {
+    if (value == null || value.toString().trim().isEmpty) {
       return const SizedBox.shrink();
     }
     return Padding(
@@ -490,7 +498,11 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
       padding: const EdgeInsets.only(bottom: 12),
       child: Text(
         title,
-        style: TextStyle(fontSize: 16, color: Colors.grey.shade800),
+        style: TextStyle(
+          fontSize: 16,
+          fontWeight: FontWeight.bold,
+          color: Colors.black87,
+        ),
       ),
     );
   }

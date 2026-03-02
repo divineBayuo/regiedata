@@ -1631,7 +1631,7 @@ class _AdminDashboardState extends State<AdminDashboard>
                                         color: Colors.green.shade50,
                                         borderRadius: BorderRadius.circular(8)),
                                     child: Text(
-                                      '$count attendees',
+                                      '$count attendee(s)',
                                       style: const TextStyle(
                                           fontSize: 18,
                                           color: Colors.green,

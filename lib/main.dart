@@ -1,6 +1,7 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:regie_data/firebase_options.dart';
 import 'package:regie_data/screens/splashscreen.dart';
 
 void main() async {
@@ -12,7 +13,9 @@ void main() async {
     print('Error loading .env file: $e');
   }
 
-  await Firebase.initializeApp(
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+
+  /* await Firebase.initializeApp(
       options: FirebaseOptions(
     apiKey: dotenv.env['FIREBASE_API_KEY']!,
     authDomain: dotenv.env['FIREBASE_AUTH_DOMAIN']!,
@@ -21,7 +24,7 @@ void main() async {
     messagingSenderId: dotenv.env['FIREBASE_MESSAGING_SENDER_ID']!,
     appId: dotenv.env['FIREBASE_API_APPID']!,
     measurementId: dotenv.env['FIREBASE_MEASUREMENT_ID']!,
-  ));
+  )); */
 
   runApp(const MyApp());
 }

@@ -25,6 +25,12 @@ class _OrganizationSelectorScreenState
     _loadOrganizations();
   }
 
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _loadOrganizations();
+  }
+
   Future<void> _loadOrganizations() async {
     User? user = FirebaseAuth.instance.currentUser;
     if (user == null) {
@@ -273,7 +279,7 @@ class _OrganizationSelectorScreenState
           ],
         ),
       ),
-    );
+    ).then((_) => _loadOrganizations());
   }
 
   void _showJoinOrganizationDialog() {
@@ -376,6 +382,13 @@ class _OrganizationSelectorScreenState
                             // Navigate to appropriate screen for this org
                             await navigateToOrgScreen(context, user.uid, orgId);
                           } else {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text(
+                                    'Joined successfully but could not load organizations'),
+                                backgroundColor: Colors.orange,
+                              ),
+                            );
                             await _loadOrganizations();
                           }
                         } else {
@@ -385,6 +398,7 @@ class _OrganizationSelectorScreenState
                               backgroundColor: Colors.orange,
                             ),
                           );
+                          await _loadOrganizations();
                         }
                       } catch (e) {
                         print('Error joining organization: $e');
@@ -410,7 +424,6 @@ class _OrganizationSelectorScreenState
           ],
         ),
       ),
-    );
+    ).then((_) => _loadOrganizations());
   }
 }
-
