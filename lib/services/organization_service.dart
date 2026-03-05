@@ -1,6 +1,7 @@
 import 'dart:math';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:logger/logger.dart';
 import 'package:regie_data/models/organization_membership_model.dart';
 import 'package:regie_data/models/organization_model.dart';
 
@@ -96,7 +97,7 @@ class OrganizationService {
 
       return true;
     } catch (e) {
-      print('Error joining organization: $e');
+      Logger().e('Error joining organization: $e');
       return false;
     }
   }

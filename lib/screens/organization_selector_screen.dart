@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:logger/logger.dart';
 import 'package:regie_data/helper_functions/role_navigation.dart';
 import 'package:regie_data/models/organization_model.dart';
 import 'package:regie_data/services/organization_service.dart';
@@ -46,7 +47,7 @@ class _OrganizationSelectorScreenState
         },
       );
     } catch (e) {
-      print('Error loading organizations: $e');
+      Logger().e('Error loading organizations: $e');
       setState(() => _isLoading = false);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -159,7 +160,7 @@ class _OrganizationSelectorScreenState
                 // Navigate to appropriate screen based on role in this active org
                 await navigateToOrgScreen(context, user.uid, org.id);
               } catch (e) {
-                print('Error setting active organization: $e');
+                Logger().e('Error setting active organization: $e');
                 if (!mounted) return;
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
@@ -234,7 +235,7 @@ class _OrganizationSelectorScreenState
                       setDialogState(() => isCreating = true);
 
                       try {
-                        print(
+                        Logger().e(
                             'Creating organization: ${nameController.text.trim()}');
 
                         final orgId = await _orgService.createOrganization(
@@ -242,12 +243,12 @@ class _OrganizationSelectorScreenState
                           user.uid,
                         );
 
-                        print('Organization created with ID: $orgId');
+                        Logger().e('Organization created with ID: $orgId');
 
                         await _orgService.setActiveOrganization(
                             user.uid, orgId);
 
-                        print('Active organization set');
+                        Logger().e('Active organization set');
 
                         if (!context.mounted) return;
 
@@ -256,7 +257,7 @@ class _OrganizationSelectorScreenState
                         // Navigate to dadshboard for this new org as admin
                         await navigateToOrgScreen(context, user.uid, orgId);
                       } catch (e) {
-                        print('Error creating organization: $e');
+                        Logger().e('Error creating organization: $e');
 
                         setDialogState(() => isCreating = false);
 
@@ -342,7 +343,7 @@ class _OrganizationSelectorScreenState
                       setDialogState(() => isJoining = true);
 
                       try {
-                        print(
+                        Logger().e(
                             'Joining organization with code: ${codeController.text.trim()}');
 
                         // fetch user's role from the user's doc
@@ -353,7 +354,7 @@ class _OrganizationSelectorScreenState
                         final userData = userDoc.data();
                         final userRole = userData?['role'] as String? ?? 'user';
 
-                        print('User role from document: $userRole');
+                        Logger().e('User role from document: $userRole');
 
                         final success = await _orgService.joinOrganization(
                           codeController.text.trim(),
@@ -361,7 +362,7 @@ class _OrganizationSelectorScreenState
                           role: userRole,
                         );
 
-                        print('Join result: $success');
+                        Logger().e('Join result: $success');
 
                         if (!context.mounted) return;
 
@@ -401,7 +402,7 @@ class _OrganizationSelectorScreenState
                           await _loadOrganizations();
                         }
                       } catch (e) {
-                        print('Error joining organization: $e');
+                        Logger().e('Error joining organization: $e');
 
                         setDialogState(() => isJoining = false);
 

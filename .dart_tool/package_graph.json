@@ -15,6 +15,7 @@
         "flutter_dotenv",
         "flutter_launcher_icons",
         "google_sign_in",
+        "logger",
         "lottie",
         "mobile_scanner",
         "provider",
@@ -52,6 +53,13 @@
         "stream_channel",
         "test_api",
         "vector_math"
+      ]
+    },
+    {
+      "name": "logger",
+      "version": "2.6.2",
+      "dependencies": [
+        "meta"
       ]
     },
     {

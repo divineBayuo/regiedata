@@ -6,6 +6,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
+import 'package:logger/logger.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:regie_data/helper_functions/organization_context.dart';
 import 'package:regie_data/screens/all_attendance_screen.dart';
@@ -1523,7 +1524,7 @@ class _AdminDashboardState extends State<AdminDashboard>
                 .snapshots(),
             builder: (context, snapshot) {
               if (snapshot.hasError) {
-                print(snapshot.error);
+                Logger().e(snapshot.error);
               }
               if (snapshot.hasError) {
                 return Center(
@@ -1829,7 +1830,7 @@ class _AdminDashboardState extends State<AdminDashboard>
   // Session History Screen
   void _showSessionHistoryScreen(BuildContext context) async {
     String? orgId = await OrganizationContext.getCurrentOrganizationId();
-    print('DEBUG: Current Org ID: $orgId');
+    Logger().e('DEBUG: Current Org ID: $orgId');
 
     Navigator.push(
       context,
@@ -1847,9 +1848,9 @@ class _AdminDashboardState extends State<AdminDashboard>
                 .orderBy('createdAt', descending: true)
                 .snapshots(),
             builder: (context, snapshot) {
-              print('DEBUG: Connection state: ${snapshot.connectionState}');
-              print('DEBUG: Has data: ${snapshot.hasData}');
-              print('DEBUG: Doc count: ${snapshot.data?.docs.length}');
+              Logger().e('DEBUG: Connection state: ${snapshot.connectionState}');
+              Logger().e('DEBUG: Has data: ${snapshot.hasData}');
+              Logger().e('DEBUG: Doc count: ${snapshot.data?.docs.length}');
               if (snapshot.connectionState == ConnectionState.waiting) {
                 return const Center(
                   child: CircularProgressIndicator(),
@@ -1857,7 +1858,7 @@ class _AdminDashboardState extends State<AdminDashboard>
               }
 
               if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-                print('DEBUG: Error: ${snapshot.error}');
+                Logger().e('DEBUG: Error: ${snapshot.error}');
                 return const Center(
                   child: Text('No Sessions Found'),
                 );

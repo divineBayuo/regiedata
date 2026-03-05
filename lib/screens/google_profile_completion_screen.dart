@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:logger/logger.dart';
 import 'package:regie_data/helper_functions/role_navigation.dart';
 import 'package:regie_data/screens/organization_selector_screen.dart';
 
@@ -171,7 +172,7 @@ class _GoogleProfileCompletionScreenState
         'createdAt': DateTime.now().toIso8601String(),
       });
 
-      print('Profile saved to Firestore');
+      Logger().e('Profile saved to Firestore');
 
       if (!mounted) return;
 
@@ -202,7 +203,7 @@ class _GoogleProfileCompletionScreenState
       // Navigate based on role
       navigateBasedOnRole(context);
     } catch (e) {
-      print('Error completing profile: $e');
+      Logger().e('Error completing profile: $e');
       if (!mounted) return;
       _showSnackBar('Error saving profile: $e');
     } finally {

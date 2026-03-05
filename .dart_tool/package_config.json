@@ -278,6 +278,12 @@
       "languageVersion": "3.8"
     },
     {
+      "name": "logger",
+      "rootUri": "file:///C:/Users/divin/AppData/Local/Pub/Cache/hosted/pub.dev/logger-2.6.2",
+      "packageUri": "lib/",
+      "languageVersion": "2.17"
+    },
+    {
       "name": "lottie",
       "rootUri": "file:///C:/Users/divin/AppData/Local/Pub/Cache/hosted/pub.dev/lottie-3.3.2",
       "packageUri": "lib/",
