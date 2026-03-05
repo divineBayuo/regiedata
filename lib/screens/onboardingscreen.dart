@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:logger/logger.dart';
 import 'package:lottie/lottie.dart';
 import 'package:regie_data/screens/Signinpage.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -37,10 +38,10 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   ];
 
   void _nextPage() async {
-    print('Current page: $_currentPage, Total pages: ${_pages.length}');
+    Logger().e('Current page: $_currentPage, Total pages: ${_pages.length}');
 
     if (_currentPage == _pages.length - 1) {
-      print('Last page reached, calling onFinish');
+      Logger().e('Last page reached, calling onFinish');
       final prefs = await SharedPreferences.getInstance();
       await prefs.setBool('first_time', false);
 
@@ -52,7 +53,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         MaterialPageRoute(builder: (_) => const Signinpage()),
       );
     } else {
-      print('Moving to next page');
+      Logger().e('Moving to next page');
       _pageController.nextPage(
           duration: const Duration(milliseconds: 500), curve: Curves.easeInOut);
     }
@@ -160,7 +161,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     return InkWell(
       borderRadius: BorderRadius.circular(12),
       onTap: () {
-        print('Button tapped on page: $_currentPage');
+        Logger().e('Button tapped on page: $_currentPage');
         _nextPage();
       },
       child: Container(

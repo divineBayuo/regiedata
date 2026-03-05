@@ -1,6 +1,7 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:logger/logger.dart';
 import 'package:regie_data/firebase_options.dart';
 import 'package:regie_data/screens/splashscreen.dart';
 
@@ -10,7 +11,7 @@ void main() async {
   try {
     await dotenv.load(fileName: ".env");
   } catch (e) {
-    print('Error loading .env file: $e');
+    Logger().e('Error loading .env file: ', error: e);
   }
 
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
