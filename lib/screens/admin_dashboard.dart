@@ -9,10 +9,12 @@ import 'package:flutter/services.dart';
 import 'package:logger/logger.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:regie_data/helper_functions/organization_context.dart';
+import 'package:regie_data/models/organization_model.dart';
 import 'package:regie_data/screens/all_attendance_screen.dart';
 import 'package:regie_data/screens/manage_users_screen.dart';
 import 'package:regie_data/screens/organization_selector_screen.dart';
 import 'package:regie_data/screens/signinpage.dart';
+import 'package:regie_data/services/organization_service.dart';
 import 'package:share_plus/share_plus.dart';
 
 class AdminDashboard extends StatefulWidget {
@@ -32,6 +34,12 @@ class _AdminDashboardState extends State<AdminDashboard>
   int _activeSessions = 0;
   int _totalOrgMembers = 0;
   double _totalMoneyCollected = 0;
+
+  final OrganizationService orgService = OrganizationService();
+  final User? user = FirebaseAuth.instance.currentUser;
+
+  OrganizationModel? _currentOrg;
+  bool _isAdmin = false;
 
   // Monthly analytics: map of YYYY-MM -> total amount
   Map<String, double> _monthlyMoney = {};
@@ -60,6 +68,31 @@ class _AdminDashboardState extends State<AdminDashboard>
 
   Future<void> _loadStats() async {
     String? orgId = await OrganizationContext.getCurrentOrganizationId();
+    if (orgId == null) return;
+
+    final orgDoc =
+        await _firestore.collection('organizations').doc(orgId).get();
+    if (orgDoc.exists) {
+      final org = OrganizationModel.fromMap(orgDoc.data()!, orgDoc.id);
+
+      final memberDoc = await _firestore
+          .collection('organization_members')
+          .where('organizationId', isEqualTo: orgId)
+          .where('userId', isEqualTo: user?.uid)
+          .limit(1)
+          .get();
+
+      bool isAdmin = false;
+      if (memberDoc.docs.isNotEmpty) {
+        final memberData = memberDoc.docs.first.data();
+        isAdmin = memberData['role'] == 'admin';
+      }
+
+      setState(() {
+        _currentOrg = org;
+        _isAdmin = isAdmin;
+      });
+    }
 
     // Get organization members count
     final membersSnapshot = await _firestore
@@ -152,11 +185,11 @@ class _AdminDashboardState extends State<AdminDashboard>
       ..sort(
         (a, b) => a.key.compareTo(b.key),
       ));
-    final sortedMonthlyAtt = Map.fromEntries(weeklyAtt.entries.toList()
+    final sortedMonthlyAtt = Map.fromEntries(monthlyAtt.entries.toList()
       ..sort(
         (a, b) => a.key.compareTo(b.key),
       ));
-    final sortedYearlyAtt = Map.fromEntries(weeklyAtt.entries.toList()
+    final sortedYearlyAtt = Map.fromEntries(yearlyAtt.entries.toList()
       ..sort(
         (a, b) => a.key.compareTo(b.key),
       ));
@@ -199,6 +232,35 @@ class _AdminDashboardState extends State<AdminDashboard>
         builder: (context) => const OrganizationSelectorScreen(),
       ),
     );
+  }
+
+  void _confirmDelete(BuildContext context, String orgId) {
+    showDialog(
+        context: context,
+        builder: (_) => AlertDialog(
+              title: const Text('Delete Organization'),
+              content: const Text(
+                  'This will permanently delete the organization and all its data. Are you sure you want to proceed?'),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('Cancel'),
+                ),
+                ElevatedButton(
+                    style:
+                        ElevatedButton.styleFrom(backgroundColor: Colors.red),
+                    onPressed: () async {
+                      Navigator.pop(context);
+                      await orgService.deleteOrganization(orgId);
+                      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+                          content: Text('Organization deleted.')));
+                    },
+                    child: const Text(
+                      'Delete',
+                      style: TextStyle(color: Colors.white),
+                    ))
+              ],
+            ));
   }
 
   @override
@@ -435,6 +497,40 @@ class _AdminDashboardState extends State<AdminDashboard>
             Colors.teal,
             () => _showSessionHistoryScreen(context),
           ),
+
+          if (_isAdmin && _currentOrg != null) ...[
+            const SizedBox(height: 20),
+            const Divider(),
+            const SizedBox(height: 8),
+            Text(
+              'Danger Zone',
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.bold,
+                color: Colors.red.shade700,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                IconButton(
+                  onPressed: () => _confirmDelete(context, _currentOrg!.id),
+                  icon: const Icon(
+                    Icons.delete_forever,
+                    color: Colors.red,
+                  ),
+                  tooltip: 'Delete Organization',
+                ),
+                TextButton(
+                  onPressed: () => _confirmDelete(context, _currentOrg!.id),
+                  child: Text(
+                    'Delete Organization',
+                    style: TextStyle(color: Colors.red),
+                  ),
+                ),
+              ],
+            ),
+          ]
         ],
       ),
     );
@@ -989,7 +1085,7 @@ class _AdminDashboardState extends State<AdminDashboard>
       // YYYY-MM -> Month
       final parts = key.split('-');
       return _monthName(int.parse(parts[1])).substring(0, 3);
-    }else {
+    } else {
       // YYYY -> 'YY
       return " '${key.substring(2)}";
     }
@@ -1848,7 +1944,8 @@ class _AdminDashboardState extends State<AdminDashboard>
                 .orderBy('createdAt', descending: true)
                 .snapshots(),
             builder: (context, snapshot) {
-              Logger().e('DEBUG: Connection state: ${snapshot.connectionState}');
+              Logger()
+                  .e('DEBUG: Connection state: ${snapshot.connectionState}');
               Logger().e('DEBUG: Has data: ${snapshot.hasData}');
               Logger().e('DEBUG: Doc count: ${snapshot.data?.docs.length}');
               if (snapshot.connectionState == ConnectionState.waiting) {

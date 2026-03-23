@@ -38,6 +38,11 @@ class OrganizationModel {
     );
   }
 
+  factory OrganizationModel.fromFirestore(DocumentSnapshot doc) {
+    return OrganizationModel.fromMap(
+        doc.data() as Map<String, dynamic>, doc.id);
+  }
+
   static DateTime _parseDateTime(dynamic value) {
     if (value == null) return DateTime.now();
     if (value is Timestamp) return value.toDate();
