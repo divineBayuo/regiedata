@@ -222,4 +222,23 @@ class OrganizationService {
         .doc(membershipId)
         .update({'role': 'user', 'isApproved': false});
   }
+
+  Future<void> deleteOrganization(String orgId) async {
+    final membersSnapshot = await FirebaseFirestore.instance
+        .collection('organizations')
+        .doc('orgId')
+        .collection('members')
+        .get();
+
+    for (var doc in membersSnapshot.docs) {
+      await doc.reference.delete();
+    }
+
+    // delete org itself after deleting data
+    await FirebaseFirestore.instance
+        .collection('organizations')
+        .doc(orgId)
+        .delete();
+  }
+
 }
