@@ -28,6 +28,7 @@ class MyApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       title: 'Regie Data',
       theme: ThemeData(
+        fontFamily: 'Quicksand',
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.green),
         useMaterial3: true,
       ),
