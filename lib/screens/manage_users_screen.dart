@@ -134,7 +134,10 @@ class _ManageUsersScreenState extends State<ManageUsersScreen>
     return Scaffold(
       backgroundColor: Colors.grey.shade50,
       appBar: AppBar(
-        title: const Text('Manage Members'),
+        title: const Text(
+          'Manage Members 💼',
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
         backgroundColor: Colors.green,
         foregroundColor: Colors.white,
         bottom: TabBar(
@@ -144,10 +147,10 @@ class _ManageUsersScreenState extends State<ManageUsersScreen>
           unselectedLabelColor: Colors.white70,
           isScrollable: true,
           tabs: const [
-            Tab(text: 'All Members'),
-            Tab(text: 'Pending Admins'),
-            Tab(text: 'Admins'),
-            Tab(text: 'Analytics'),
+            Tab(text: 'All Members 👪'),
+            Tab(text: 'Pending Admins ⌛'),
+            Tab(text: 'Admins 👨🏻‍💼'),
+            Tab(text: 'Analytics 📈'),
           ],
         ),
       ),

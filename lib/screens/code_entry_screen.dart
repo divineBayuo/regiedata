@@ -18,7 +18,10 @@ class _CodeEntryScreenState extends State<CodeEntryScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Enter Attendance Code'),
+        title: const Text(
+          'Enter Attendance Code </>',
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
         backgroundColor: Colors.green,
         foregroundColor: Colors.white,
       ),

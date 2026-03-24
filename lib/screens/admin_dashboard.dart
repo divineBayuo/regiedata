@@ -283,7 +283,10 @@ class _AdminDashboardState extends State<AdminDashboard>
     return Scaffold(
       backgroundColor: Colors.grey.shade50,
       appBar: AppBar(
-        title: const Text('Admin Dashboard'),
+        title: const Text(
+          'Admin Dashboard 📊📉',
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
         backgroundColor: Colors.green,
         foregroundColor: Colors.white,
         elevation: 0,
@@ -293,8 +296,8 @@ class _AdminDashboardState extends State<AdminDashboard>
           labelColor: Colors.white,
           unselectedLabelColor: Colors.white70,
           tabs: const [
-            Tab(text: 'Overview'),
-            Tab(text: 'Analytics'),
+            Tab(text: 'Overview 📊'),
+            Tab(text: 'Analytics 📉'),
           ],
         ),
         actions: [
@@ -1622,7 +1625,10 @@ class _AdminDashboardState extends State<AdminDashboard>
       MaterialPageRoute(
         builder: (context) => Scaffold(
           appBar: AppBar(
-            title: const Text('Active Sessions'),
+            title: const Text(
+              'Active Sessions ⚡',
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
             backgroundColor: Colors.green,
             foregroundColor: Colors.white,
           ),
@@ -1948,7 +1954,10 @@ class _AdminDashboardState extends State<AdminDashboard>
       MaterialPageRoute(
         builder: (context) => Scaffold(
           appBar: AppBar(
-            title: const Text('Session History'),
+            title: const Text(
+              'Session History 📜',
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
             backgroundColor: Colors.green,
             foregroundColor: Colors.white,
           ),
