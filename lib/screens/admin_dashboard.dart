@@ -251,9 +251,24 @@ class _AdminDashboardState extends State<AdminDashboard>
                         ElevatedButton.styleFrom(backgroundColor: Colors.red),
                     onPressed: () async {
                       Navigator.pop(context);
-                      await orgService.deleteOrganization(orgId);
-                      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-                          content: Text('Organization deleted.')));
+                      try {
+                        await orgService.deleteOrganization(orgId);
+                        if (!mounted) return;
+                        ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                                content: Text('Organization deleted.')));
+                        Navigator.pushReplacement(
+                            context,
+                            MaterialPageRoute(
+                                builder: (_) =>
+                                    const OrganizationSelectorScreen()));
+                      } catch (e) {
+                        if (!mounted) return;
+                        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                          content: Text('Failed to delete: $e'),
+                          backgroundColor: Colors.red,
+                        ));
+                      }
                     },
                     child: const Text(
                       'Delete',

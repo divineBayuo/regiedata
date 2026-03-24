@@ -183,11 +183,15 @@ class _OrganizationSelectorScreenState
       context: context,
       builder: (context) => StatefulBuilder(
         builder: (context, setDialogState) => AlertDialog(
-          title: const Text('Create Organization'),
+          title: const Text(
+            'Create Organization',
+            style: TextStyle(fontWeight: FontWeight.w600),
+          ),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               TextField(
+                style: TextStyle(fontWeight: FontWeight.w600),
                 controller: nameController,
                 decoration: const InputDecoration(
                   labelText: 'Organization Name',
@@ -275,7 +279,10 @@ class _OrganizationSelectorScreenState
                 backgroundColor: Colors.green,
                 foregroundColor: Colors.white,
               ),
-              child: const Text('Create'),
+              child: const Text(
+                'Create',
+                style: TextStyle(fontWeight: FontWeight.w600),
+              ),
             ),
           ],
         ),
@@ -291,7 +298,10 @@ class _OrganizationSelectorScreenState
       context: context,
       builder: (context) => StatefulBuilder(
         builder: (context, setDialogState) => AlertDialog(
-          title: const Text('Join Organization'),
+          title: const Text(
+            'Join Organization',
+            style: TextStyle(fontWeight: FontWeight.w600),
+          ),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -420,7 +430,10 @@ class _OrganizationSelectorScreenState
                 backgroundColor: Colors.blue,
                 foregroundColor: Colors.white,
               ),
-              child: const Text('Join'),
+              child: const Text(
+                'Join',
+                style: TextStyle(fontWeight: FontWeight.w600),
+              ),
             ),
           ],
         ),

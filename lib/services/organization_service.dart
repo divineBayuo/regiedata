@@ -224,21 +224,31 @@ class OrganizationService {
   }
 
   Future<void> deleteOrganization(String orgId) async {
-    final membersSnapshot = await FirebaseFirestore.instance
-        .collection('organizations')
-        .doc('orgId')
-        .collection('members')
-        .get();
+    final firestore = FirebaseFirestore.instance;
 
-    for (var doc in membersSnapshot.docs) {
-      await doc.reference.delete();
+    // Delete all subcollections first
+    final collections = [
+      'organization_members',
+      'attendance_sessions',
+      'attendance'
+    ];
+
+    for (final collection in collections) {
+      final snapshot = await firestore
+          .collection(collection)
+          .where('organizationId', isEqualTo: orgId)
+          .get();
+
+      // Batch deletes in groups of 500
+      const batchSize = 500;
+      for (int i = 0; i < snapshot.docs.length; i += batchSize) {
+        final batch = firestore.batch();
+        final chunk = snapshot.docs.skip(i).take(batchSize);
+        for (final doc in chunk) {
+          batch.delete(doc.reference);
+        }
+        await batch.commit();
+      }
     }
-
-    // delete org itself after deleting data
-    await FirebaseFirestore.instance
-        .collection('organizations')
-        .doc(orgId)
-        .delete();
   }
-
 }
