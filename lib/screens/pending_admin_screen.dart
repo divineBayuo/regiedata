@@ -19,7 +19,10 @@ class PendingAdminScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Pending Admin Approval'),
+        title: const Text(
+          'Pending Admin Approval ⌛',
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
         backgroundColor: Colors.orange,
         foregroundColor: Colors.white,
         actions: [
@@ -124,15 +127,14 @@ class PendingAdminScreen extends StatelessWidget {
                   );
                 },
                 style: OutlinedButton.styleFrom(
-                  side: const BorderSide(color: Colors.orange),
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 32,
-                    vertical: 16,
-                  ),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  )
-                ),
+                    side: const BorderSide(color: Colors.orange),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 32,
+                      vertical: 16,
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    )),
                 child: const Text(
                   'Contact Support',
                   style: TextStyle(color: Colors.orange),

@@ -11,7 +11,10 @@ class AttendanceHistoryScreen extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Attendance History'),
+        title: const Text(
+          'Attendance History 📜',
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
         backgroundColor: Colors.green,
         foregroundColor: Colors.white,
       ),

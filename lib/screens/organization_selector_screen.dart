@@ -63,7 +63,10 @@ class _OrganizationSelectorScreenState
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Select Organization'),
+        title: const Text(
+          'Select Organization ✅',
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
         backgroundColor: Colors.green,
         foregroundColor: Colors.white,
         automaticallyImplyLeading: false, // removes back button

@@ -28,7 +28,10 @@ class _AllAttendanceScreenState extends State<AllAttendanceScreen> {
     if (_orgId == null) {
       return Scaffold(
         appBar: AppBar(
-          title: const Text('All Attendance Records'),
+          title: const Text(
+            'All Attendance Records 📋',
+            style: TextStyle(fontWeight: FontWeight.bold),
+          ),
           backgroundColor: Colors.green,
           foregroundColor: Colors.white,
         ),
@@ -40,7 +43,10 @@ class _AllAttendanceScreenState extends State<AllAttendanceScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('All Attendance Records'),
+        title: const Text(
+          'All Attendance Records 📋',
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
         backgroundColor: Colors.green,
         foregroundColor: Colors.white,
       ),
