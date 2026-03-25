@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:logger/logger.dart';
 import 'package:regie_data/helper_functions/role_navigation.dart';
-import 'package:regie_data/screens/organization_selector_screen.dart';
+import 'package:regie_data/screens/landing_page.dart';
 
 class GoogleProfileCompletionScreen extends StatefulWidget {
   final User user;
@@ -176,11 +176,11 @@ class _GoogleProfileCompletionScreenState
 
       if (!mounted) return;
 
-      // Navigate to organization selector
+      // Navigate to landing page
       final bool? orgSelected = await Navigator.push(
         context,
         MaterialPageRoute(
-          builder: (context) => const OrganizationSelectorScreen(),
+          builder: (context) => const LandingPage(),
         ),
       );
 

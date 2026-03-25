@@ -6,7 +6,7 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:regie_data/helper_functions/role_navigation.dart';
 import 'package:regie_data/screens/google_profile_completion_screen.dart';
-import 'package:regie_data/screens/organization_selector_screen.dart';
+import 'package:regie_data/screens/landing_page.dart';
 import 'package:regie_data/screens/signinpage.dart';
 
 class Signuppage extends StatefulWidget {
@@ -184,12 +184,12 @@ class _SignuppageState extends State<Signuppage> {
       // Save to firestore
       await _saveUserToFirestore(userCredential.user!.uid);
 
-      // Navigate to organizationn selector
+      // Navigate to organization selector
       if (!mounted) return;
       final bool? orgSelected = await Navigator.push(
         context,
         MaterialPageRoute(
-          builder: (context) => const OrganizationSelectorScreen(),
+          builder: (context) => const LandingPage(),
         ),
       );
 
@@ -341,7 +341,7 @@ class _SignuppageState extends State<Signuppage> {
           final bool? orgSelected = await Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (context) => const OrganizationSelectorScreen(),
+              builder: (context) => const LandingPage(),
             ),
           );
 
