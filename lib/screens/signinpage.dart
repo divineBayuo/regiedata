@@ -164,7 +164,7 @@ class _SigninpageState extends State<Signinpage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: Color(0xFF0A0F0A),
       body: Stack(
         alignment: Alignment.center,
         children: [

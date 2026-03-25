@@ -1,7 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:regie_data/screens/admin_dashboard.dart';
-import 'package:regie_data/screens/organization_selector_screen.dart';
+import 'package:regie_data/screens/landing_page.dart';
 import 'package:regie_data/screens/pending_admin_screen.dart';
 import 'package:regie_data/screens/user_home_screen.dart';
 import 'package:regie_data/services/organization_service.dart';
@@ -12,11 +12,11 @@ Future<void> navigateBasedOnRole(BuildContext context) async {
 
   if (!context.mounted) return;
 
-  // ALways go to org selector after signing in
+  // Always go to org selector after signing in
   Navigator.pushReplacement(
     context,
     MaterialPageRoute(
-      builder: (context) => const OrganizationSelectorScreen(),
+      builder: (context) => const LandingPage(),
     ),
   );
 }
