@@ -6,13 +6,23 @@ import 'package:logger/logger.dart';
 import 'package:regie_data/helper_functions/role_navigation.dart';
 import 'package:regie_data/screens/landing_page.dart';
 
+// Theme tokens
+const _bg = Color(0xFF0A0F0A);
+const _surface = Color(0xFF111811);
+const _green = Color(0xFF22C55E);
+const _greenDark = Color(0xFF16A34A);
+
 class GoogleProfileCompletionScreen extends StatefulWidget {
   final User user;
   final String email;
   final String? displayName;
 
-  const GoogleProfileCompletionScreen(
-      {super.key, required this.user, required this.email, this.displayName});
+  const GoogleProfileCompletionScreen({
+    super.key,
+    required this.user,
+    required this.email,
+    this.displayName,
+  });
 
   @override
   State<GoogleProfileCompletionScreen> createState() =>
@@ -68,7 +78,7 @@ class _GoogleProfileCompletionScreenState
     return cleanPhone.length == 10 && RegExp(r'^\d{10}$').hasMatch(cleanPhone);
   }
 
-  Future<void> _selectedDate() async {
+  Future<void> _selectDate() async {
     final DateTime? picked = await showDatePicker(
       context: context,
       initialDate: DateTime(2000),
@@ -76,11 +86,12 @@ class _GoogleProfileCompletionScreenState
       lastDate: DateTime.now(),
       builder: (context, child) {
         return Theme(
-          data: Theme.of(context).copyWith(
+          data: ThemeData.dark().copyWith(
             colorScheme: const ColorScheme.light(
-              primary: Colors.green,
+              primary: _green,
               onPrimary: Colors.white,
-              onSurface: Colors.black,
+              surface: _surface,
+              onSurface: Colors.white,
             ),
           ),
           child: child!,
@@ -177,7 +188,7 @@ class _GoogleProfileCompletionScreenState
       if (!mounted) return;
 
       // Navigate to landing page
-      final bool? orgSelected = await Navigator.push(
+      await Navigator.push(
         context,
         MaterialPageRoute(
           builder: (context) => const LandingPage(),
@@ -185,20 +196,6 @@ class _GoogleProfileCompletionScreenState
       );
 
       if (!mounted) return;
-
-      if (orgSelected != true) {
-        // User didn't create/select an organization to proceed
-        _showSnackBar('Please select or create an organization to continue');
-        setState(() => _isLoading = false);
-        return;
-      }
-
-      // Organization selected, now navigate
-      if (_selectedRole == 'admin') {
-        _showSnackBar('Profile completed! Admin request submitted.');
-      } else {
-        _showSnackBar('Profile completed successfully!');
-      }
 
       // Navigate based on role
       navigateBasedOnRole(context);
@@ -215,6 +212,9 @@ class _GoogleProfileCompletionScreenState
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(message),
+        backgroundColor: _surface,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
         duration: const Duration(seconds: 3),
       ),
     );
@@ -223,362 +223,210 @@ class _GoogleProfileCompletionScreenState
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: _bg,
       appBar: AppBar(
-        title: const Text(
-          'Complete Your Profile 🪪',
-          style: TextStyle(fontWeight: FontWeight.bold),
+        title: Row(
+          children: [
+            Container(
+              width: 30,
+              height: 30,
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(colors: [_green, _greenDark]),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Image.asset(
+                'assets/images/regie_splash.png',
+                width: 20,
+                height: 20,
+              ),
+            ),
+            const SizedBox(width: 10),
+            const Text(
+              'Regie Data',
+              style: TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.w800,
+                fontSize: 18,
+              ),
+            )
+          ],
         ),
-        backgroundColor: Colors.green,
-        foregroundColor: Colors.white,
+        backgroundColor: _bg,
+        elevation: 0,
         automaticallyImplyLeading: false,
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(1),
+          child: Container(
+            height: 1,
+            color: Colors.white.withOpacity(0.06),
+          ),
+        ),
       ),
       body: Stack(
         children: [
           SingleChildScrollView(
-            padding: const EdgeInsets.all(24),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Welcome message
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: Colors.green.shade50,
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(
-                      color: Colors.green.shade200,
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 28),
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxHeight: 460),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Welcome message
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(18),
+                    decoration: BoxDecoration(
+                      color: _green.withOpacity(0.08),
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(color: _green.withOpacity(0.2)),
+                    ),
+                    child: Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: _green.withOpacity(0.15),
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(
+                            Icons.waving_hand,
+                            color: _green,
+                            size: 18,
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Text(
+                            'Welcome ${widget.displayName ?? 'there'}! PLease complete your profile to continue',
+                            style: TextStyle(
+                              fontSize: 13,
+                              height: 1.5,
+                              color: Colors.white.withOpacity(0.75),
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                  child: Row(
+
+                  const SizedBox(height: 24),
+
+                  // Personal information
+                  _sectionCard(
+                    icon: Icons.person_outline,
+                    title: 'Personal Information',
                     children: [
-                      const Icon(
-                        Icons.info_outline,
-                        color: Colors.green,
-                      ),
+                      _field('First Name', _firstnameController, 'John',
+                          isRequired: true),
+                      _field('Surname', _surnameController, 'Doe',
+                          isRequired: true),
+                      _field('Other Name(s)', _othernameController, 'Optional'),
+                    ],
+                  ),
+                  const SizedBox(height: 4),
+
+                  // Gender and DOB
+                  Row(
+                    children: [
+                      Expanded(child: _genderDropdown()),
                       const SizedBox(width: 12),
-                      Expanded(
-                        child: Text(
-                          'Welcome ${widget.displayName ?? ''}! PLease complete your profile to continue',
-                          style: const TextStyle(fontSize: 14),
-                        ),
-                      ),
+                      Expanded(child: _dobPicker()),
                     ],
                   ),
-                ),
+                  const SizedBox(height: 16),
 
-                const SizedBox(height: 24),
+                  // Contact Information
+                  _sectionCard(
+                      icon: Icons.phone_outlined,
+                      title: 'Contact Information',
+                      children: [
+                        _phoneField(),
+                        _field('Residence', _residenceController,
+                            'e.g. Abeka-Lapaz'),
+                      ]),
+                  const SizedBox(height: 16),
 
-                /* // Account Type
-                _buildSectionHeader('Account Type'),
-                const SizedBox(height: 10),
-                Container(
-                  padding: const EdgeInsets.all(10),
-                  decoration: BoxDecoration(
-                    color: Colors.grey.shade50,
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(
-                      color: Colors.grey.shade300,
-                    ),
-                  ),
-                  child: Column(
+                  // Work & Education
+                  _sectionCard(
+                    icon: Icons.work_outline,
+                    title: 'Work & Education',
                     children: [
-                      RadioListTile<String>(
-                        title: const Text('User'),
-                        subtitle: const Text('Mark attendance, view records'),
-                        value: 'user',
-                        groupValue: _selectedRole,
-                        activeColor: Colors.green,
-                        onChanged: (value) => setState(
-                          () => _selectedRole = value!,
-                        ),
-                      ),
-                      RadioListTile<String>(
-                        title: const Text('Admin'),
-                        subtitle: const Text(
-                            'Create sessions, manage members (requires approval)'),
-                        value: 'admin',
-                        groupValue: _selectedRole,
-                        activeColor: Colors.green,
-                        onChanged: (value) => setState(
-                          () => _selectedRole = value!,
-                        ),
-                      ),
+                      _field(
+                          'Occupation', _occupationController, 'e.g. Student'),
+                      _checkboxGroup(),
+                      if (_isWorking) ...[
+                        const SizedBox(height: 12),
+                        _field('Place of Work', _placeofworkController,
+                            'e.g. Ghana Ltd',
+                            isRequired: true),
+                      ],
+                      if (_isSchooling) ...[
+                        _field('Place of School', _placeofschoolController,
+                            'e.g. KNUST',
+                            isRequired: true),
+                        _field('Course of Study', _courseofstudyController,
+                            'e.g. Computer Science'),
+                      ],
                     ],
                   ),
-                ),
+                  const SizedBox(height: 16),
 
-                const SizedBox(height: 24),
-                const Divider(),
-                const SizedBox(height: 24),
- */
-                // Personal information
-                _buildSectionHeader('Personal Information'),
-                const SizedBox(height: 16),
-
-                _buildTextField('First Name', _firstnameController, 'John',
-                    isRequired: true),
-                _buildTextField('Surname', _surnameController, 'Doe',
-                    isRequired: true),
-                _buildTextField(
-                    'Other Name(s)', _othernameController, 'Optional'),
-
-                const SizedBox(height: 6),
-
-                // Gender and DOB
-                Row(
-                  children: [
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
-                              Text(
-                                'Gender',
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  color: Colors.grey.shade700,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                              const Text(
-                                ' *',
-                                style: TextStyle(
-                                  color: Colors.red,
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 6),
-                          DropdownButtonFormField<String>(
-                            value: _selectedGender,
-                            decoration: InputDecoration(
-                              contentPadding: const EdgeInsets.symmetric(
-                                horizontal: 20,
-                                vertical: 20,
-                              ),
-                              enabledBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(12),
-                                borderSide: BorderSide(
-                                  color: Colors.grey.shade400,
-                                  width: 1.5,
-                                ),
-                              ),
-                              focusedBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(12),
-                                borderSide: const BorderSide(
-                                  color: Colors.green,
-                                  width: 2,
-                                ),
-                              ),
-                            ),
-                            items: const [
-                              DropdownMenuItem(
-                                value: 'Male',
-                                child: Text('Male'),
-                              ),
-                              DropdownMenuItem(
-                                value: 'Female',
-                                child: Text('Female'),
-                              )
-                            ],
-                            onChanged: (value) => setState(
-                              () => _selectedGender = value,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
-                              Text(
-                                'Date of Birth',
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  color: Colors.grey.shade700,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                              const Text(
-                                ' *',
-                                style: TextStyle(
-                                  color: Colors.red,
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(
-                            height: 6,
-                          ),
-                          InkWell(
-                            onTap: _selectedDate,
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 14,
-                                vertical: 18,
-                              ),
-                              decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(12),
-                                border: Border.all(
-                                  color: Colors.grey.shade400,
-                                  width: 1.5,
-                                ),
-                              ),
-                              child: Row(
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceBetween,
-                                children: [
-                                  Expanded(
-                                    child: Text(
-                                      _selectedDateOfBirth == null
-                                          ? 'Select'
-                                          : '${_selectedDateOfBirth!.day}/${_selectedDateOfBirth!.month}/${_selectedDateOfBirth!.year}',
-                                      style: TextStyle(
-                                        color: _selectedDateOfBirth == null
-                                            ? Colors.grey.shade600
-                                            : Colors.black,
-                                      ),
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
-                                  ),
-                                  Icon(
-                                    Icons.calendar_today,
-                                    color: Colors.grey.shade600,
-                                    size: 16,
-                                  ),
-                                ],
-                              ),
-                            ),
-                          )
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-
-                const SizedBox(height: 24),
-                const Divider(),
-                const SizedBox(height: 20),
-
-                // Contact Information
-                _buildSectionHeader('Contact Information'),
-                const SizedBox(height: 14),
-
-                _buildPhoneField(),
-                _buildTextField(
-                    'Residence', _residenceController, 'e.g. Abeka-Lapaz'),
-
-                const SizedBox(height: 20),
-                const Divider(),
-                const SizedBox(height: 20),
-
-                // Work & Education
-                _buildSectionHeader('Work & Education'),
-                const SizedBox(height: 14),
-
-                _buildTextField(
-                    'Occupation', _occupationController, 'e.g. Student'),
-
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: Colors.grey.shade50,
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(
-                      color: Colors.grey.shade300,
-                    ),
-                  ),
-                  child: Column(
+                  // Organization Information
+                  _sectionCard(
+                    icon: Icons.business_outlined,
+                    title: 'Organization Information',
                     children: [
-                      CheckboxListTile(
-                        title: const Text('I am currently working'),
-                        value: _isWorking,
-                        activeColor: Colors.green,
-                        onChanged: (value) =>
-                            setState(() => _isWorking = value ?? false),
-                      ),
-                      CheckboxListTile(
-                        title: const Text('I am currently schooling'),
-                        value: _isSchooling,
-                        activeColor: Colors.green,
-                        onChanged: (value) =>
-                            setState(() => _isSchooling = value ?? false),
-                      ),
+                      const SizedBox(height: 14),
+                      _field('Family', _familyController, 'e.g. Truth'),
+                      _field('Department', _departmentController, 'e.g. Media'),
                     ],
                   ),
-                ),
+                  const SizedBox(height: 28),
 
-                const SizedBox(height: 12),
-
-                if (_isWorking)
-                  _buildTextField(
-                      'Place of Work', _placeofworkController, 'e.g. Ghana Ltd',
-                      isRequired: true),
-
-                if (_isSchooling) ...[
-                  _buildTextField(
-                      'Place of School', _placeofschoolController, 'e.g. KNUST',
-                      isRequired: true),
-                  _buildTextField('Course of Study', _courseofstudyController,
-                      'e.g. Computer Science'),
-                ],
-
-                const SizedBox(height: 20),
-                const Divider(),
-                const SizedBox(height: 20),
-
-                // Organization Information
-                _buildSectionHeader('Organization Information'),
-                const SizedBox(height: 14),
-
-                _buildTextField('Family', _familyController, 'e.g. Truth'),
-                _buildTextField(
-                    'Department', _departmentController, 'e.g. Media'),
-
-                const SizedBox(height: 28),
-
-                // Complete Profile Button
-                SizedBox(
-                  width: double.infinity,
-                  height: 56,
-                  child: ElevatedButton(
-                    onPressed: _isLoading ? null : _completeProfile,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.green,
-                      foregroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(
+                  // Complete Profile Button
+                  GestureDetector(
+                    onTap: _isLoading ? null : _completeProfile,
+                    child: Container(
+                      width: double.infinity,
+                      height: 52,
+                      decoration: BoxDecoration(
+                        gradient:
+                            const LinearGradient(colors: [_green, _greenDark]),
                         borderRadius: BorderRadius.circular(12),
+                        boxShadow: [
+                          BoxShadow(
+                            color: _green.withOpacity(0.3),
+                            blurRadius: 16,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
                       ),
-                    ),
-                    child: const Text(
-                      'Complete Profile',
-                      style: TextStyle(
-                        fontSize: 16,
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
+                      child: const Center(
+                        child: Text(
+                          'Complete Profile',
+                          style: TextStyle(
+                            fontSize: 15,
+                            color: Colors.white,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
                       ),
                     ),
                   ),
-                ),
-
-                const SizedBox(height: 40),
-              ],
+                  const SizedBox(height: 40),
+                ],
+              ),
             ),
           ),
 
           // Loading Overlay
           if (_isLoading)
             Container(
-              color: Colors.black26,
+              color: Colors.black.withOpacity(0.45),
               child: const Center(
                 child: CircularProgressIndicator(
-                  color: Colors.green,
-                  strokeWidth: 4,
+                  color: _green,
+                  strokeWidth: 2.5,
                 ),
               ),
             ),
@@ -587,135 +435,273 @@ class _GoogleProfileCompletionScreenState
     );
   }
 
-  Widget _buildSectionHeader(String title) {
-    return Text(
-      title,
-      style: TextStyle(
-        fontSize: 16,
-        fontWeight: FontWeight.bold,
-        color: Colors.grey.shade800,
+  // Section card wrapper
+  Widget _sectionCard({
+    required IconData icon,
+    required String title,
+    required List<Widget> children,
+  }) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: _surface,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: Colors.white.withOpacity(0.07)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(7),
+                decoration: BoxDecoration(
+                  color: _green.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(7),
+                ),
+                child: Icon(icon, color: _green, size: 16),
+              ),
+              const SizedBox(width: 10),
+              Text(
+                title,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w700,
+                  fontSize: 14,
+                  letterSpacing: 0.2,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 20),
+          ...children,
+        ],
       ),
     );
   }
 
-  Widget _buildTextField(
-      String label, TextEditingController controller, String hint,
-      {bool isRequired = false}) {
-    return Column(
+  Widget _label(String text, {bool required = false}) {
+    return Row(
       children: [
-        Align(
-          alignment: Alignment.centerLeft,
-          child: Row(
-            children: [
-              Text(
-                label,
-                style: TextStyle(
-                  fontSize: 14,
-                  color: Colors.grey.shade700,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              if (isRequired)
-                const Text(
-                  ' *',
-                  style: TextStyle(
-                    color: Colors.red,
-                  ),
-                ),
-            ],
+        Text(
+          text,
+          style: TextStyle(
+            color: Colors.white.withOpacity(0.6),
+            fontSize: 12,
+            fontWeight: FontWeight.w600,
           ),
         ),
-        const SizedBox(
-          height: 6,
+        if (required)
+          const Text(
+            ' *',
+            style: TextStyle(color: _green, fontSize: 12),
+          ),
+      ],
+    );
+  }
+
+  Widget _inputBase(
+      {required TextEditingController controller,
+      required String hint,
+      bool obscure = false,
+      TextInputType keyboardType = TextInputType.text,
+      List<TextInputFormatter>? formatters,
+      String? helper,
+      Widget? suffix}) {
+    return TextFormField(
+      controller: controller,
+      obscureText: obscure,
+      keyboardType: keyboardType,
+      inputFormatters: formatters,
+      style: const TextStyle(color: Colors.white, fontSize: 14),
+      cursorColor: _green,
+      decoration: InputDecoration(
+        hintText: hint,
+        helperText: helper,
+        hintStyle:
+            TextStyle(color: Colors.white.withOpacity(0.2), fontSize: 13),
+        helperStyle:
+            TextStyle(color: Colors.white.withOpacity(0.3), fontSize: 11),
+        suffixIcon: suffix,
+        filled: true,
+        fillColor: Colors.white.withOpacity(0.03),
+        contentPadding:
+            const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+          borderSide: BorderSide(color: Colors.white.withOpacity(0.1)),
         ),
-        TextFormField(
-          controller: controller,
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+          borderSide: const BorderSide(color: _green, width: 1.5),
+        ),
+      ),
+    );
+  }
+
+  Widget _field(
+    String label,
+    TextEditingController controller,
+    String hint, {
+    bool isRequired = false,
+    TextInputType keyboardType = TextInputType.text,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _label(label, required: isRequired),
+        const SizedBox(height: 6),
+        _inputBase(
+            controller: controller, hint: hint, keyboardType: keyboardType),
+        const SizedBox(height: 16),
+      ],
+    );
+  }
+
+  Widget _phoneField() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _label('Phone Number', required: true),
+        const SizedBox(height: 6),
+        _inputBase(
+          controller: _phonenumberController,
+          hint: '0244123456',
+          keyboardType: TextInputType.phone,
+          helper: 'Enter 10 digits only',
+          formatters: [
+            FilteringTextInputFormatter.digitsOnly,
+            LengthLimitingTextInputFormatter(10),
+          ],
+        ),
+        const SizedBox(height: 16),
+      ],
+    );
+  }
+
+  Widget _genderDropdown() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _label('Gender', required: true),
+        const SizedBox(height: 6),
+        DropdownButtonFormField<String>(
+          value: _selectedGender,
+          dropdownColor: _surface,
+          style: const TextStyle(color: Colors.white, fontSize: 14),
+          iconEnabledColor: Colors.white.withOpacity(0.4),
           decoration: InputDecoration(
-            hintText: hint,
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
-            contentPadding: const EdgeInsets.symmetric(
-              horizontal: 20,
-              vertical: 20,
-            ),
+            filled: true,
+            fillColor: Colors.white.withOpacity(0.03),
+            contentPadding:
+                const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
             enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(
-                color: Colors.grey.shade400,
-                width: 1.5,
-              ),
+              borderRadius: BorderRadius.circular(10),
+              borderSide: BorderSide(color: Colors.white.withOpacity(0.1)),
             ),
             focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(
-                color: Colors.green,
-                width: 2,
-              ),
+              borderRadius: BorderRadius.circular(10),
+              borderSide: BorderSide(color: _green),
             ),
           ),
-        ),
-        const SizedBox(
-          height: 16,
+          items: const [
+            DropdownMenuItem(value: 'Male', child: Text('Male')),
+            DropdownMenuItem(value: 'Female', child: Text('Female')),
+          ],
+          onChanged: (v) => setState(() => _selectedGender = v),
         ),
       ],
     );
   }
 
-  Widget _buildPhoneField() {
+  Widget _dobPicker() {
     return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Align(
-          alignment: Alignment.centerLeft,
-          child: Row(
-            children: [
-              Text(
-                'Phone Number',
-                style: TextStyle(
-                  fontSize: 14,
-                  color: Colors.grey.shade700,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              const Text(
-                ' *',
-                style: TextStyle(
-                  color: Colors.red,
-                ),
-              )
-            ],
-          ),
-        ),
-        const SizedBox(
-          height: 6,
-        ),
-        TextFormField(
-          controller: _phonenumberController,
-          decoration: InputDecoration(
-            hintText: '0244123456',
-            helperText: 'Enter 10 digits only',
-            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-            contentPadding:
-                const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(color: Colors.grey.shade400, width: 1.5),
+        _label('Date of Birth', required: true),
+        const SizedBox(height: 6),
+        GestureDetector(
+          onTap: _selectDate,
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 15),
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.03),
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(color: Colors.white.withOpacity(0.1)),
             ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: Colors.green, width: 2),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Expanded(
+                  child: Text(
+                    _selectedDateOfBirth == null
+                        ? 'Select'
+                        : '${_selectedDateOfBirth!.day}/${_selectedDateOfBirth!.month}/${_selectedDateOfBirth!.year}',
+                    style: TextStyle(
+                      color: _selectedDateOfBirth == null
+                          ? Colors.white.withOpacity(0.2)
+                          : Colors.white,
+                      fontSize: 14,
+                    ),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+                Icon(Icons.calendar_today_outlined,
+                    color: Colors.white.withOpacity(0.3), size: 16),
+              ],
             ),
           ),
-          keyboardType: TextInputType.phone,
-          inputFormatters: [
-            FilteringTextInputFormatter.digitsOnly,
-            LengthLimitingTextInputFormatter(10),
-          ],
-        ),
-        const SizedBox(
-          height: 16,
-        ),
+        )
       ],
+    );
+  }
+
+  Widget _checkboxGroup() {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.03),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: Colors.white.withOpacity(0.08)),
+      ),
+      child: Column(
+        children: [
+          _styledCheckbox(
+            'I am currently working',
+            _isWorking,
+            (v) => setState(() => _isWorking = v ?? false),
+          ),
+          Divider(
+            height: 1,
+            color: Colors.white.withOpacity(0.06),
+          ),
+          _styledCheckbox(
+            'I am currently schooling',
+            _isSchooling,
+            (v) => setState(() => _isSchooling = v ?? false),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _styledCheckbox(
+      String label, bool value, void Function(bool?) onChanged) {
+    return CheckboxListTile(
+      title: Text(
+        label,
+        style: TextStyle(
+            color: Colors.white.withOpacity(0.7),
+            fontSize: 13,
+            fontWeight: FontWeight.w500),
+      ),
+      value: value,
+      activeColor: _green,
+      checkColor: Colors.white,
+      side: BorderSide(color: Colors.white.withOpacity(0.2)),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
+      onChanged: onChanged,
+      dense: true,
     );
   }
 
