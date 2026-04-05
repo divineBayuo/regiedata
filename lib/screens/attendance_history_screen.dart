@@ -2,6 +2,10 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
+const _bg = Color(0xFF0A0F0A);
+const _surface = Color(0xFF111811);
+const _green = Color(0xFF22C55E);
+
 class AttendanceHistoryScreen extends StatelessWidget {
   const AttendanceHistoryScreen({super.key});
 
@@ -10,14 +14,8 @@ class AttendanceHistoryScreen extends StatelessWidget {
     User? user = FirebaseAuth.instance.currentUser;
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text(
-          'Attendance History 📜',
-          style: TextStyle(fontWeight: FontWeight.bold),
-        ),
-        backgroundColor: Colors.green,
-        foregroundColor: Colors.white,
-      ),
+      backgroundColor: _bg,
+      appBar: _darkAppBar('Attendance History'),
       body: StreamBuilder<QuerySnapshot>(
         stream: FirebaseFirestore.instance
             .collection('attendance')
@@ -27,21 +25,38 @@ class AttendanceHistoryScreen extends StatelessWidget {
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(
-              child: CircularProgressIndicator(),
+              child: CircularProgressIndicator(color: _green, strokeWidth: 2),
             );
           }
 
           if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-            return const Center(
+            return Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.history, size: 80, color: Colors.grey),
-                  SizedBox(height: 16),
+                  Container(
+                      padding: const EdgeInsets.all(28),
+                      decoration: BoxDecoration(
+                          color: _surface,
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                              color: Colors.white.withOpacity(0.07))),
+                      child: Icon(Icons.history_rounded,
+                          size: 52, color: Colors.white.withOpacity(0.2))),
+                  SizedBox(height: 24),
                   Text(
                     'No attendance records found.',
-                    style: TextStyle(fontSize: 18, color: Colors.grey),
+                    style: TextStyle(
+                        fontSize: 18,
+                        color: Colors.white,
+                        fontWeight: FontWeight.w700),
                   ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Your check-ins will appear here.',
+                    style: TextStyle(
+                        color: Colors.white.withOpacity(0.4), fontSize: 14),
+                  )
                 ],
               ),
             );
@@ -55,32 +70,109 @@ class AttendanceHistoryScreen extends StatelessWidget {
               final data = doc.data() as Map<String, dynamic>;
               final timestamp = data['timestamp'] as Timestamp?;
               final date = timestamp?.toDate() ?? DateTime.now();
+              final eventName = data['eventName'] ?? 'Attendance';
+              final initial =
+                  eventName.isNotEmpty ? eventName[0].toUpperCase() : 'A';
 
-              return Card(
-                margin: const EdgeInsets.only(bottom: 12),
-                child: ListTile(
-                  leading: const CircleAvatar(
-                    backgroundColor: Colors.green,
-                    child: Icon(
-                      Icons.check,
-                      color: Colors.white,
-                    ),
+              return Container(
+                  margin: const EdgeInsets.only(bottom: 10),
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: _surface,
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(color: Colors.white.withOpacity(0.06)),
                   ),
-                  title: Text(data['eventName'] ?? 'Attendance'),
-                  subtitle: Text(
-                    '${date.day}/${date.month}/${date.year} at ${date.hour}:${date.minute.toString().padLeft(2, '0')}',
-                  ),
-                  trailing: Icon(
-                    Icons.arrow_forward_ios,
-                    color: Colors.grey.shade400,
-                    size: 16,
-                  ),
-                ),
-              );
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 44,
+                        height: 44,
+                        decoration: BoxDecoration(
+                            gradient: const LinearGradient(
+                              colors: [_green, Color(0xFF16A34A)],
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                            ),
+                            borderRadius: BorderRadius.circular(12)),
+                        child: Center(
+                          child: Text(
+                            initial,
+                            style: const TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.w800,
+                                fontSize: 18),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 14),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              eventName,
+                              style: const TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.w600,
+                                  fontSize: 14),
+                            ),
+                            const SizedBox(
+                              height: 3,
+                            ),
+                            Text(
+                              '${date.day}/${date.month}/${date.year} '
+                              '${date.hour}:${date.minute.toString().padLeft(2, '0')}',
+                              style: TextStyle(
+                                  color: Colors.white.withOpacity(0.35),
+                                  fontSize: 12),
+                            )
+                          ],
+                        ),
+                      ),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 10, vertical: 9),
+                        decoration: BoxDecoration(
+                            color: _green.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(color: _green.withOpacity(0.2))),
+                        child: const Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.check_circle_outline,
+                                color: _green, size: 13),
+                            SizedBox(width: 4),
+                            Text('Present',
+                                style: TextStyle(
+                                    color: _green,
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w700))
+                          ],
+                        ),
+                      )
+                    ],
+                  ));
             },
           );
         },
       ),
     );
   }
+
+  AppBar _darkAppBar(String title) => AppBar(
+      backgroundColor: _bg,
+      elevation: 0,
+      iconTheme: IconThemeData(color: Colors.white.withOpacity(0.7)),
+      title: Text(
+        title,
+        style: const TextStyle(
+            color: Colors.white, fontWeight: FontWeight.w700, fontSize: 16),
+      ),
+      bottom: PreferredSize(
+        preferredSize: const Size.fromHeight(1),
+        child: Container(
+          height: 1,
+          color: Colors.white.withOpacity(0.06),
+        ),
+      ));
 }
