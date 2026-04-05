@@ -3,6 +3,11 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+const _bg = Color(0xFF0A0F0A);
+const _surface = Color(0xFF111811);
+const _green = Color(0xFF22C55E);
+const _greenDark = Color(0xFF16A34A);
+
 class UserProfileScreen extends StatefulWidget {
   const UserProfileScreen({super.key});
 
@@ -18,6 +23,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
   bool _isSaving = false;
 
   // Controllers for editable fields
+
   late TextEditingController _firstnameController;
   late TextEditingController _surnameController;
   late TextEditingController _othernameController;
@@ -56,9 +62,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
       debugPrint('Error loading profile" $e');
       if (mounted) {
         setState(() => _isLoading = false);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error loading profile: $e')),
-        );
+        _snack('Error loading profile: $e');
       }
     }
   }
@@ -106,8 +110,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
   Future<void> _saveProfile() async {
     if (_firstnameController.text.trim().isEmpty ||
         _surnameController.text.trim().isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('First name and surname are required')));
+      _snack('First name and surname are required', error: true);
       return;
     }
 
@@ -156,58 +159,119 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
         _isEditing = false;
         _isSaving = false;
       });
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-        content: Text('Profile updated successfully'),
-        backgroundColor: Colors.green,
-      ));
+      _snack('Profile updated successfully');
     } catch (e) {
       debugPrint('Error saving profile: $e');
       if (!mounted) return;
       setState(() => _isSaving = false);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error saving: $e')),
-      );
+      _snack('Error saving: $e', error: true);
     }
+  }
+
+  void _snack(String msg, {bool error = false}) {
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+      content: Text(msg),
+      backgroundColor: error ? Colors.red.shade800 : _greenDark,
+      behavior: SnackBarBehavior.floating,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+    ));
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: _bg,
       appBar: AppBar(
-        title: const Text(
-          'My Profile 🙎🏻‍♂️',
-          style: TextStyle(fontWeight: FontWeight.bold),
+        backgroundColor: _bg,
+        elevation: 0,
+        iconTheme: IconThemeData(color: Colors.white.withOpacity(0.7)),
+        title: Text(
+          _isEditing ? 'Edit Profile' : 'My Profile',
+          style: const TextStyle(
+              fontWeight: FontWeight.w700, color: Colors.white, fontSize: 16),
         ),
-        backgroundColor: Colors.green,
-        foregroundColor: Colors.white,
         actions: [
           if (!_isEditing)
-            IconButton(
-              onPressed: () => setState(() => _isEditing = true),
-              icon: const Icon(Icons.edit),
-              tooltip: 'Edit Profile',
+            Padding(
+              padding: const EdgeInsets.only(right: 12),
+              child: GestureDetector(
+                onTap: () => setState(() => _isEditing = true),
+                child: Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+                  decoration: BoxDecoration(
+                      color: _green.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: _green.withOpacity(0.25))),
+                  child: const Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.edit_outlined, color: _green, size: 15),
+                      SizedBox(width: 6),
+                      Text(
+                        'Edit',
+                        style: TextStyle(
+                            color: _green,
+                            fontSize: 13,
+                            fontWeight: FontWeight.w700),
+                      )
+                    ],
+                  ),
+                ),
+              ),
             )
           else
-            IconButton(
-              onPressed: () {
-                setState(() => _isEditing = false);
-                if (_userData != null) _initControllers(_userData!);
-              },
-              icon: const Icon(Icons.close),
-              tooltip: 'Cancel',
-            )
+            Padding(
+              padding: const EdgeInsets.only(right: 12),
+              child: GestureDetector(
+                onTap: () {
+                  setState(() => _isEditing = false);
+                  if (_userData != null) _initControllers(_userData!);
+                },
+                child: Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.05),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: Colors.white.withOpacity(0.1)),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.close_rounded,
+                          color: Colors.white.withOpacity(0.5), size: 15),
+                      const SizedBox(width: 6),
+                      Text('Cancel',
+                          style: TextStyle(
+                              color: Colors.white.withOpacity(0.5),
+                              fontSize: 13)),
+                    ],
+                  ),
+                ),
+              ),
+            ),
         ],
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(1),
+          child: Container(height: 1, color: Colors.white.withOpacity(0.06)),
+        ),
       ),
       body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
+          ? const Center(
+              child: CircularProgressIndicator(
+              color: _green,
+              strokeWidth: 2,
+            ))
           : Stack(
               children: [
                 _isEditing ? _buildEditForm() : _buildViewProfile(),
                 if (_isSaving)
                   Container(
-                    color: Colors.black26,
+                    color: Colors.black.withOpacity(0.45),
                     child: const Center(
-                      child: CircularProgressIndicator(color: Colors.green),
+                      child: CircularProgressIndicator(
+                          color: _green, strokeWidth: 2.5),
                     ),
                   )
               ],
@@ -218,7 +282,11 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
   /// View Profile Mode
   Widget _buildViewProfile() {
     if (_userData == null) {
-      return const Center(child: Text('No Data Found'));
+      return Center(
+          child: Text(
+        'No Data Found',
+        style: TextStyle(color: Colors.white.withOpacity(0.4), fontSize: 14),
+      ));
     }
     final data = _userData!;
     final firstname = data['firstname'] ?? data['firstName'] ?? '';
@@ -241,29 +309,39 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
           // avatar, name card
           Container(
             width: double.infinity,
-            padding: const EdgeInsets.all(20),
+            padding: const EdgeInsets.all(22),
             decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                colors: [Colors.green, Colors.lightGreen],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-              borderRadius: BorderRadius.circular(16),
-            ),
+                gradient: const LinearGradient(
+                  colors: [Color(0xFF0D2010), Color(0xFF0A1A0C)],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                borderRadius: BorderRadius.circular(18),
+                border: Border.all(color: _green.withOpacity(0.15))),
             child: Row(
               children: [
-                CircleAvatar(
-                  radius: 36,
-                  backgroundColor: Colors.white.withOpacity(0.3),
-                  child: Text(
-                    initials,
-                    style: const TextStyle(
-                        fontSize: 30,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white),
+                Container(
+                  width: 64,
+                  height: 64,
+                  decoration: BoxDecoration(
+                    gradient:
+                        const LinearGradient(colors: [_green, _greenDark]),
+                    borderRadius: BorderRadius.circular(18),
+                    boxShadow: [
+                      BoxShadow(color: _green.withOpacity(0.3), blurRadius: 16)
+                    ],
+                  ),
+                  child: Center(
+                    child: Text(
+                      initials,
+                      style: const TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.w800,
+                          color: Colors.white),
+                    ),
                   ),
                 ),
-                const SizedBox(width: 16),
+                const SizedBox(width: 18),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -273,12 +351,33 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                         style: const TextStyle(
                             color: Colors.white,
                             fontSize: 20,
-                            fontWeight: FontWeight.bold),
+                            fontWeight: FontWeight.w800,
+                            letterSpacing: -0.3),
+                        overflow: TextOverflow.ellipsis,
                       ),
+                      const SizedBox(height: 3),
                       Text(
                         data['email'] ?? '',
-                        style: const TextStyle(
-                            color: Colors.white70, fontSize: 13),
+                        style: TextStyle(
+                            color: Colors.white.withOpacity(0.4), fontSize: 13),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const SizedBox(height: 8),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 10, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: _green.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(color: _green.withOpacity(0.2)),
+                        ),
+                        child: const Text(
+                          'Member',
+                          style: TextStyle(
+                              color: _green,
+                              fontSize: 11,
+                              fontWeight: FontWeight.w700),
+                        ),
                       )
                     ],
                   ),
@@ -288,24 +387,24 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
           ),
           const SizedBox(height: 20),
 
-          _sectionCard('Personal Information', [
+          _profileSection('Personal Information', [
             _infoRow(
                 'Other Name', data['othername'] ?? data['otherName'] ?? '-'),
             _infoRow('Gender', data['gender']),
             _infoRow('Date of Birth', _formatDob(data['dateOfBirth'])),
           ]),
 
-          const SizedBox(height: 14),
+          const SizedBox(height: 16),
 
-          _sectionCard('Contact Information', [
+          _profileSection('Contact Information', [
             _infoRow(
                 'Phone Number', data['phoneNumber'] ?? data['phone_number']),
             _infoRow('Residence', data['residence']),
           ]),
 
-          const SizedBox(height: 14),
+          const SizedBox(height: 12),
 
-          _sectionCard('Work & Education', [
+          _profileSection('Work & Education', [
             _infoRow('Occupation', data['occupation']),
             if (data['isWorking'] == true)
               _infoRow('Place of Work', data['placeOfWork']),
@@ -315,61 +414,93 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
             ],
           ]),
 
-          const SizedBox(height: 14),
+          const SizedBox(height: 12),
 
-          _sectionCard('Organization Information', [
+          _profileSection('Organization Information', [
             _infoRow('Family', data['family']),
             _infoRow('Department', data['department']),
           ]),
 
-          const SizedBox(height: 24),
+          const SizedBox(height: 28),
 
-          SizedBox(
-            width: double.infinity,
-            height: 54,
-            child: ElevatedButton.icon(
-              onPressed: () => setState(() => _isEditing = true),
-              icon: const Icon(Icons.edit),
-              label: const Text('Edit Profile'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.green,
-                foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12)),
+          GestureDetector(
+            onTap: () => setState(() => _isEditing = true),
+            child: Container(
+              width: double.infinity,
+              height: 52,
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(colors: [_green, _greenDark]),
+                borderRadius: BorderRadius.circular(12),
+                boxShadow: [
+                  BoxShadow(
+                      color: _green.withOpacity(0.3),
+                      blurRadius: 16,
+                      offset: const Offset(0, 4)),
+                ],
+              ),
+              child: const Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.edit_outlined, color: Colors.white, size: 18),
+                  SizedBox(width: 8),
+                  Text('Edit Profile',
+                      style: TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w700,
+                          fontSize: 15)),
+                ],
               ),
             ),
-          )
+          ),
+          const SizedBox(height: 20),
         ],
       ),
     );
   }
 
-  Widget _sectionCard(String title, List<Widget> children) {
+  Widget _profileSection(String title, List<Widget> rows) {
     // Filter empty rows
-    final nonEmpty =
-        children.where((w) => w is! SizedBox || w.key != null).toList();
+    final nonEmpty = rows.where((w) {
+      if (w is SizedBox) return false;
+      return true;
+    }).toList();
     if (nonEmpty.isEmpty) return const SizedBox.shrink();
 
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey.shade300),
+        color: _surface,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: Colors.white.withOpacity(0.06)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            title,
-            style: const TextStyle(
-              fontWeight: FontWeight.bold,
-              fontSize: 14,
-              color: Colors.green,
-            ),
+          Row(
+            children: [
+              Container(
+                width: 4,
+                height: 14,
+                decoration: BoxDecoration(
+                  color: _green,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              const SizedBox(width: 10),
+              Text(
+                title,
+                style: const TextStyle(
+                    fontWeight: FontWeight.w700,
+                    fontSize: 13,
+                    color: _green,
+                    letterSpacing: 0.2),
+              ),
+            ],
           ),
-          const Divider(),
+          const SizedBox(height: 14),
+          Divider(color: Colors.white.withOpacity(0.06), height: 1),
+          const SizedBox(height: 12),
           ...nonEmpty,
         ],
       ),
@@ -381,7 +512,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
       return const SizedBox.shrink();
     }
     return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.only(bottom: 10),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -389,7 +520,8 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
             width: 120,
             child: Text(
               '$label:',
-              style: const TextStyle(
+              style: TextStyle(
+                color: Colors.white.withOpacity(0.4),
                 fontWeight: FontWeight.w600,
                 fontSize: 13,
               ),
@@ -398,7 +530,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
           Expanded(
             child: Text(
               value.toString(),
-              style: const TextStyle(fontSize: 13),
+              style: const TextStyle(color: Colors.white, fontSize: 13),
             ),
           )
         ],
@@ -424,69 +556,92 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _sectionHeader('Personal Information'),
-          _editField(_firstnameController, 'First Name *'),
-          _editField(_surnameController, 'Surname *'),
-          _editField(_othernameController, 'Other Name'),
-          const Divider(height: 32),
-          _sectionHeader('Contact Information'),
-          _editField(_phoneNumberController, 'Phone Number',
-              type: TextInputType.phone,
-              formatters: [
-                FilteringTextInputFormatter.digitsOnly,
-                LengthLimitingTextInputFormatter(10)
-              ]),
-          _editField(_residenceController, 'Residence'),
-          const Divider(height: 32),
-          _sectionHeader('Work & Education'),
-          _editField(_occupationController, 'Occupation'),
-          Container(
-            decoration: BoxDecoration(
-                color: Colors.grey.shade50,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: Colors.grey.shade300)),
-            child: Column(
-              children: [
-                CheckboxListTile(
-                  title: const Text('Currently Working'),
-                  value: _isWorking,
-                  activeColor: Colors.green,
-                  onChanged: (v) => setState(() => _isWorking = v ?? false),
-                ),
-                CheckboxListTile(
-                  title: const Text('Currently Schooling'),
-                  value: _isSchooling,
-                  activeColor: Colors.green,
-                  onChanged: (v) => setState(() => _isSchooling = v ?? false),
-                ),
-              ],
+          _editSection('Personal Information', [
+            _editField(_firstnameController, 'First Name *'),
+            _editField(_surnameController, 'Surname *'),
+            _editField(_othernameController, 'Other Name'),
+          ]),
+          const SizedBox(height: 14),
+          _editSection('Contact Information', [
+            _editField(_phoneNumberController, 'Phone Number',
+                type: TextInputType.phone,
+                formatters: [
+                  FilteringTextInputFormatter.digitsOnly,
+                  LengthLimitingTextInputFormatter(10)
+                ]),
+            _editField(_residenceController, 'Residence'),
+          ]),
+          const Divider(height: 14),
+          _editSection('Work & Education', [
+            _editField(_occupationController, 'Occupation'),
+            Container(
+              decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.03),
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: Colors.white.withOpacity(0.08))),
+              child: Column(
+                children: [
+                  _styledCheckbox(
+                    'Currently Working',
+                    _isWorking,
+                    (v) => setState(() => _isWorking = v ?? false),
+                  ),
+                  Divider(
+                    height: 1,
+                    color: Colors.white.withOpacity(0.06),
+                  ),
+                  _styledCheckbox(
+                    'Currently Schooling',
+                    _isSchooling,
+                    (v) => setState(() => _isSchooling = v ?? false),
+                  ),
+                ],
+              ),
             ),
-          ),
-          const SizedBox(height: 12),
-          if (_isWorking) _editField(_placeOfWorkController, 'Place of Work'),
-          if (_isSchooling) ...[
-            _editField(_placeOfSchoolController, 'Place of School'),
-            _editField(_courseController, 'Course of Study'),
-          ],
-          const Divider(height: 32),
-          _sectionHeader('Organization Information'),
-          _editField(_familyController, 'Family'),
-          _editField(_departmentController, 'Department'),
-          const SizedBox(height: 24),
-          SizedBox(
-            width: double.infinity,
-            height: 54,
-            child: ElevatedButton(
-              onPressed: _isSaving ? null : _saveProfile,
-              style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.green,
-                  foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  )),
-              child: const Text(
-                'Save Changes',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+            if (_isWorking) ...[
+              const SizedBox(height: 12),
+              _editField(_placeOfWorkController, 'Place of Work')
+            ],
+            if (_isSchooling) ...[
+              const SizedBox(height: 12),
+              _editField(_placeOfSchoolController, 'Place of School'),
+              _editField(_courseController, 'Course of Study'),
+            ],
+          ]),
+          const SizedBox(height: 14),
+          _editSection('Organization Information', [
+            _editField(_familyController, 'Family'),
+            _editField(_departmentController, 'Department'),
+          ]),
+          const SizedBox(height: 28),
+          GestureDetector(
+            onTap: _isSaving ? null : _saveProfile,
+            child: Container(
+              width: double.infinity,
+              height: 52,
+              decoration: BoxDecoration(
+                gradient: _isSaving
+                    ? null
+                    : const LinearGradient(colors: [_green, _greenDark]),
+                color: _isSaving ? Colors.white.withOpacity(0.05) : null,
+                borderRadius: BorderRadius.circular(12),
+                boxShadow: _isSaving
+                    ? null
+                    : [
+                        BoxShadow(
+                            color: _green.withOpacity(0.3),
+                            blurRadius: 16,
+                            offset: const Offset(0, 4)),
+                      ],
+              ),
+              child: const Center(
+                child: Text(
+                  'Save Changes',
+                  style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w700,
+                      fontSize: 15),
+                ),
               ),
             ),
           ),
@@ -496,44 +651,103 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
     );
   }
 
-  Widget _sectionHeader(String title) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
-      child: Text(
-        title,
-        style: TextStyle(
-          fontSize: 16,
-          fontWeight: FontWeight.bold,
-          color: Colors.black87,
-        ),
+  Widget _editSection(String title, List<Widget> children) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: _surface,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: Colors.white.withOpacity(0.06)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                  width: 4,
+                  height: 14,
+                  decoration: BoxDecoration(
+                      color: _green, borderRadius: BorderRadius.circular(2))),
+              const SizedBox(width: 10),
+              Text(title,
+                  style: const TextStyle(
+                      color: _green,
+                      fontWeight: FontWeight.w700,
+                      fontSize: 13)),
+            ],
+          ),
+          const SizedBox(height: 16),
+          ...children,
+        ],
       ),
     );
   }
 
   Widget _editField(TextEditingController controller, String label,
-      {TextInputType type = TextInputType.text,
+      {bool isRequired = false,
+      TextInputType type = TextInputType.text,
       List<TextInputFormatter>? formatters}) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 14),
-      child: TextField(
-        controller: controller,
-        keyboardType: type,
-        inputFormatters: formatters,
-        decoration: InputDecoration(
-          labelText: label,
-          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-          contentPadding:
-              const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-          enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: BorderSide(color: Colors.grey.shade400, width: 1.5),
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Text(label,
+                  style: TextStyle(
+                      color: Colors.white.withOpacity(0.55),
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600)),
+              if (isRequired)
+                const Text(' *', style: TextStyle(color: _green, fontSize: 12))
+            ],
           ),
-          focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: const BorderSide(color: Colors.green, width: 2),
+          const SizedBox(height: 6),
+          TextFormField(
+            controller: controller,
+            keyboardType: type,
+            inputFormatters: formatters,
+            style: const TextStyle(color: Colors.white, fontSize: 14),
+            cursorColor: _green,
+            decoration: InputDecoration(
+              filled: true,
+              fillColor: Colors.white.withOpacity(0.03),
+              contentPadding:
+                  const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(10),
+                borderSide: BorderSide(color: Colors.white.withOpacity(0.1)),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(10),
+                borderSide: const BorderSide(color: _green, width: 1.5),
+              ),
+            ),
           ),
-        ),
+        ],
       ),
     );
+  }
+
+  Widget _styledCheckbox(
+      String label, bool value, void Function(bool?) onChanged) {
+    return CheckboxListTile(
+        title: Text(
+          label,
+          style: TextStyle(
+              color: Colors.white.withOpacity(0.7),
+              fontSize: 13,
+              fontWeight: FontWeight.w500),
+        ),
+        value: value,
+        activeColor: _green,
+        checkColor: Colors.white,
+        side: BorderSide(color: Colors.white.withOpacity(0.2)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
+        onChanged: onChanged,
+        dense: true);
   }
 }
