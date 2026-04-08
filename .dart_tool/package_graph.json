@@ -18,6 +18,7 @@
         "logger",
         "lottie",
         "mobile_scanner",
+        "paystack_for_flutter",
         "provider",
         "qr",
         "qr_flutter",
@@ -53,6 +54,15 @@
         "stream_channel",
         "test_api",
         "vector_math"
+      ]
+    },
+    {
+      "name": "paystack_for_flutter",
+      "version": "1.0.4",
+      "dependencies": [
+        "dio",
+        "flutter",
+        "webview_flutter"
       ]
     },
     {
@@ -890,6 +900,67 @@
       "dependencies": [
         "collection",
         "meta"
+      ]
+    },
+    {
+      "name": "webview_flutter",
+      "version": "4.13.1",
+      "dependencies": [
+        "flutter",
+        "webview_flutter_android",
+        "webview_flutter_platform_interface",
+        "webview_flutter_wkwebview"
+      ]
+    },
+    {
+      "name": "dio",
+      "version": "5.9.2",
+      "dependencies": [
+        "async",
+        "collection",
+        "dio_web_adapter",
+        "http_parser",
+        "meta",
+        "mime",
+        "path"
+      ]
+    },
+    {
+      "name": "webview_flutter_platform_interface",
+      "version": "2.15.1",
+      "dependencies": [
+        "flutter",
+        "meta",
+        "plugin_platform_interface"
+      ]
+    },
+    {
+      "name": "dio_web_adapter",
+      "version": "2.1.2",
+      "dependencies": [
+        "dio",
+        "http_parser",
+        "meta",
+        "web"
+      ]
+    },
+    {
+      "name": "webview_flutter_wkwebview",
+      "version": "3.24.2",
+      "dependencies": [
+        "flutter",
+        "meta",
+        "path",
+        "webview_flutter_platform_interface"
+      ]
+    },
+    {
+      "name": "webview_flutter_android",
+      "version": "4.10.15",
+      "dependencies": [
+        "flutter",
+        "meta",
+        "webview_flutter_platform_interface"
       ]
     }
   ],

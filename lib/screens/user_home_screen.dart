@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:regie_data/helper_functions/organization_context.dart';
 import 'package:regie_data/screens/attendance_history_screen.dart';
 import 'package:regie_data/screens/code_entry_screen.dart';
+import 'package:regie_data/screens/main_shell.dart';
 import 'package:regie_data/screens/organization_selector_screen.dart';
 import 'package:regie_data/screens/qr_scanner_screen.dart';
 import 'package:regie_data/screens/signinpage.dart';
@@ -87,8 +88,13 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
     );
   }
 
-  void _switchOrganization() => Navigator.pushReplacement(context,
-      MaterialPageRoute(builder: (_) => const OrganizationSelectorScreen()));
+  void _switchOrganization() => Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(
+          builder: (_) => const MainShell(
+                initialIndex: 1,
+                homeWidget: OrganizationSelectorScreen(),
+              )));
 
   @override
   Widget build(BuildContext context) {
@@ -137,7 +143,11 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
           IconButton(
             onPressed: () => Navigator.push(
               context,
-              MaterialPageRoute(builder: (_) => const UserProfileScreen()),
+              MaterialPageRoute(
+                  builder: (_) => const MainShell(
+                        initialIndex: 0,
+                        homeWidget: UserHomeScreen(),
+                      )),
             ).then((_) => _loadUserData()),
             icon: Icon(
               Icons.person_outline_rounded,
@@ -285,7 +295,9 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
                 () => Navigator.push(
                         context,
                         MaterialPageRoute(
-                            builder: (_) => const QRScannerScreen()))
+                            builder: (_) => const MainShell(
+                                initialIndex: 0,
+                                homeWidget: QRScannerScreen())))
                     .then((_) => _loadUserData()),
               ),
 
@@ -299,7 +311,9 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
                 () => Navigator.push(
                         context,
                         MaterialPageRoute(
-                            builder: (_) => const CodeEntryScreen()))
+                            builder: (_) => const MainShell(
+                                initialIndex: 0,
+                                homeWidget: CodeEntryScreen())))
                     .then((_) => _loadUserData()),
               ),
 
@@ -313,7 +327,9 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
                 () => Navigator.push(
                     context,
                     MaterialPageRoute(
-                        builder: (_) => const AttendanceHistoryScreen())),
+                        builder: (_) => const MainShell(
+                            initialIndex: 0,
+                            homeWidget: AttendanceHistoryScreen()))),
               ),
 
               const SizedBox(height: 10),
@@ -325,7 +341,9 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
                 const Color(0xFF2DD4BF),
                 () => Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (_) => const UserProfileScreen()),
+                  MaterialPageRoute(
+                      builder: (_) => const MainShell(
+                          initialIndex: 0, homeWidget: UserProfileScreen())),
                 ).then((_) => _loadUserData()),
               ),
 
