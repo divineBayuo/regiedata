@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:regie_data/screens/main_shell.dart';
 import 'package:regie_data/screens/organization_selector_screen.dart';
 
 class LandingPage extends StatefulWidget {
@@ -69,7 +70,10 @@ class _LandingPageState extends State<LandingPage>
     Navigator.pushReplacement(
       context,
       PageRouteBuilder(
-        pageBuilder: (_, __, ___) => const OrganizationSelectorScreen(),
+        pageBuilder: (_, __, ___) => const MainShell(
+          initialIndex: 2,
+          homeWidget: OrganizationSelectorScreen(),
+        ),
         transitionsBuilder: (_, anim, __, child) =>
             FadeTransition(opacity: anim, child: child),
         transitionDuration: const Duration(milliseconds: 400),
@@ -1063,7 +1067,7 @@ class _LandingPageState extends State<LandingPage>
               children: [
                 _pricingCard(
                   plan: 'Free',
-                  price: 'GH₵ 0',
+                  price: '\$0',
                   period: 'forever',
                   desc: 'Perfect for getting started.',
                   features: [
@@ -1080,7 +1084,7 @@ class _LandingPageState extends State<LandingPage>
                 const SizedBox(width: 16),
                 _pricingCard(
                   plan: 'Pro',
-                  price: 'GH₵ 49',
+                  price: '\$4.99',
                   period: 'per month',
                   desc: 'For growing organizations.',
                   features: [
@@ -1099,7 +1103,7 @@ class _LandingPageState extends State<LandingPage>
                 const SizedBox(width: 16),
                 _pricingCard(
                   plan: 'Business',
-                  price: 'GH₵ 120',
+                  price: '\$9.99',
                   period: 'per month',
                   desc: 'For large institutions.',
                   features: [
@@ -1321,12 +1325,8 @@ class _LandingPageState extends State<LandingPage>
                   children: [
                     _footerBrand(),
                     const SizedBox(height: 32),
-                    _footerColumn('Product', [
-                      'Features',
-                      'How It Works',
-                      'Pricing',
-                      'Changelog'
-                    ]),
+                    _footerColumn('Product',
+                        ['Features', 'How It Works', 'Pricing', 'Changelog']),
                     const SizedBox(height: 24),
                     _footerColumn('Organization', [
                       'Privacy Policy',

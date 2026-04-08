@@ -1,6 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:regie_data/screens/Signinpage.dart';
+import 'package:regie_data/screens/main_shell.dart';
 import 'package:regie_data/screens/user_home_screen.dart';
 
 const _bg = Color(0xFF0A0F0A);
@@ -45,8 +46,11 @@ class PendingAdminScreen extends StatelessWidget {
                 gradient: const LinearGradient(colors: [_green, _greenDark]),
                 borderRadius: BorderRadius.circular(8),
               ),
-              child: const Icon(Icons.check_circle_outline,
-                  color: Colors.white, size: 17),
+              child: Image.asset(
+                'assets/images/regie_splash.png',
+                width: 20,
+                height: 20,
+              ),
             ),
             const SizedBox(width: 10),
             const Text(
@@ -229,7 +233,10 @@ class PendingAdminScreen extends StatelessWidget {
                       onTap: () => Navigator.pushReplacement(
                         context,
                         MaterialPageRoute(
-                            builder: (_) => const UserHomeScreen()),
+                            builder: (_) => const MainShell(
+                                  initialIndex: 0,
+                                  homeWidget: UserHomeScreen(),
+                                )),
                       ),
                       child: Container(
                         width: double.infinity,

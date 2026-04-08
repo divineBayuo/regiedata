@@ -7,6 +7,7 @@ import 'package:google_sign_in/google_sign_in.dart';
 import 'package:regie_data/helper_functions/role_navigation.dart';
 import 'package:regie_data/screens/google_profile_completion_screen.dart';
 import 'package:regie_data/screens/landing_page.dart';
+import 'package:regie_data/screens/main_shell.dart';
 import 'package:regie_data/screens/signinpage.dart';
 
 // Theme tokens
@@ -195,12 +196,15 @@ class _SignuppageState extends State<Signuppage> {
       // Save to firestore
       await _saveUserToFirestore(userCredential.user!.uid);
 
-      // Navigate to organization selector
+      // Navigate to landing page
       if (!mounted) return;
       await Navigator.push(
         context,
         MaterialPageRoute(
-          builder: (context) => const LandingPage(),
+          builder: (context) => const MainShell(
+            initialIndex: 0,
+            homeWidget: LandingPage(),
+          ),
         ),
       );
 

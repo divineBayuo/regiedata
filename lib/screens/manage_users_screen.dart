@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:regie_data/helper_functions/organization_context.dart';
+import 'package:regie_data/services/notification_service.dart';
 import 'package:regie_data/services/organization_service.dart';
 
 const _bg = Color(0xFF0A0F0A);
@@ -316,99 +317,115 @@ class _ManageUsersScreenState extends State<ManageUsersScreen>
       future: OrganizationContext.getCurrentOrganizationId(),
       builder: (context, orgSnapshot) {
         if (!orgSnapshot.hasData) {
-          return const Center(child: CircularProgressIndicator());
+          return const Center(
+              child: CircularProgressIndicator(color: _green, strokeWidth: 2));
         }
 
         final orgId = orgSnapshot.data!;
 
-        return StreamBuilder<QuerySnapshot>(
-          stream: _getMemberStream(orgId, filter),
-          builder: (context, snapshot) {
-            if (snapshot.connectionState == ConnectionState.waiting) {
-              return const Center(
-                  child:
-                      CircularProgressIndicator(color: _green, strokeWidth: 2));
-            }
+        return FutureBuilder<DocumentSnapshot>(
+            future: _firestore.collection('organizations').doc(orgId).get(),
+            builder: (context, orgDocSnapshot) {
+              final orgName = orgDocSnapshot.hasData && orgDocSnapshot.data!.exists
+                  ? (orgDocSnapshot.data!.data() as Map<String, dynamic>)['name']
+                          as String? ??
+                      ''
+                  : '';
 
-            if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-              return Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(24),
-                      decoration: BoxDecoration(
-                        color: _surface,
-                        shape: BoxShape.circle,
-                        border:
-                            Border.all(color: Colors.white.withOpacity(0.07)),
+              return StreamBuilder<QuerySnapshot>(
+                stream: _getMemberStream(orgId, filter),
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return const Center(
+                        child: CircularProgressIndicator(
+                            color: _green, strokeWidth: 2));
+                  }
+
+                  if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+                    return Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(24),
+                            decoration: BoxDecoration(
+                              color: _surface,
+                              shape: BoxShape.circle,
+                              border: Border.all(
+                                  color: Colors.white.withOpacity(0.07)),
+                            ),
+                            child: Icon(Icons.people_outline,
+                                size: 48, color: Colors.white.withOpacity(0.2)),
+                          ),
+                          const SizedBox(height: 20),
+                          Text(
+                            filter == 'pending_admins'
+                                ? 'No Pending Admin Requests'
+                                : filter == 'admins'
+                                    ? 'No Admins'
+                                    : 'No Members',
+                            style: TextStyle(
+                              fontWeight: FontWeight.w700,
+                              fontSize: 16,
+                              color: Colors.white,
+                            ),
+                          )
+                        ],
                       ),
-                      child: Icon(Icons.people_outline,
-                          size: 48, color: Colors.white.withOpacity(0.2)),
-                    ),
-                    const SizedBox(height: 20),
-                    Text(
-                      filter == 'pending_admins'
-                          ? 'No Pending Admin Requests'
-                          : filter == 'admins'
-                              ? 'No Admins'
-                              : 'No Members',
-                      style: TextStyle(
-                        fontWeight: FontWeight.w700,
-                        fontSize: 16,
-                        color: Colors.white,
-                      ),
-                    )
-                  ],
-                ),
-              );
-            }
-
-            return ListView.builder(
-              padding: const EdgeInsets.fromLTRB(16, 16, 16, 100),
-              itemCount: snapshot.data!.docs.length,
-              itemBuilder: (context, index) {
-                final memberDoc = snapshot.data!.docs[index];
-                final memberData = memberDoc.data() as Map<String, dynamic>;
-                final userId = memberData['userId'];
-
-                return FutureBuilder<DocumentSnapshot>(
-                  future: _firestore.collection('users').doc(userId).get(),
-                  builder: (context, userSnapshot) {
-                    if (!userSnapshot.hasData || !userSnapshot.data!.exists) {
-                      return const SizedBox.shrink();
-                    }
-
-                    final userData =
-                        userSnapshot.data!.data() as Map<String, dynamic>;
-
-                    // Apply filters
-                    if (filter == 'all') {
-                      if (_selectedGender != 'All' &&
-                          userData['gender'] != _selectedGender) {
-                        return const SizedBox.shrink();
-                      }
-                      if (_selectedDepartment != 'All' &&
-                          userData['department'] != _selectedDepartment) {
-                        return const SizedBox.shrink();
-                      }
-                      if (_selectedFamily != 'All' &&
-                          userData['family'] != _selectedFamily) {
-                        return const SizedBox.shrink();
-                      }
-                    }
-
-                    return _memberCard(
-                      memberDoc.id,
-                      userData,
-                      memberData,
                     );
-                  },
-                );
-              },
-            );
-          },
-        );
+                  }
+
+                  return ListView.builder(
+                    padding: const EdgeInsets.fromLTRB(16, 16, 16, 100),
+                    itemCount: snapshot.data!.docs.length,
+                    itemBuilder: (context, index) {
+                      final memberDoc = snapshot.data!.docs[index];
+                      final memberData =
+                          memberDoc.data() as Map<String, dynamic>;
+                      final userId = memberData['userId'];
+
+                      return FutureBuilder<DocumentSnapshot>(
+                        future:
+                            _firestore.collection('users').doc(userId).get(),
+                        builder: (context, userSnapshot) {
+                          if (!userSnapshot.hasData ||
+                              !userSnapshot.data!.exists) {
+                            return const SizedBox.shrink();
+                          }
+
+                          final userData =
+                              userSnapshot.data!.data() as Map<String, dynamic>;
+
+                          // Apply filters
+                          if (filter == 'all') {
+                            if (_selectedGender != 'All' &&
+                                userData['gender'] != _selectedGender) {
+                              return const SizedBox.shrink();
+                            }
+                            if (_selectedDepartment != 'All' &&
+                                userData['department'] != _selectedDepartment) {
+                              return const SizedBox.shrink();
+                            }
+                            if (_selectedFamily != 'All' &&
+                                userData['family'] != _selectedFamily) {
+                              return const SizedBox.shrink();
+                            }
+                          }
+
+                          return _memberCard(
+                            memberDoc.id,
+                            orgName,
+                            userData,
+                            memberData,
+                            userId,
+                          );
+                        },
+                      );
+                    },
+                  );
+                },
+              );
+            });
       },
     );
   }
@@ -432,8 +449,10 @@ class _ManageUsersScreenState extends State<ManageUsersScreen>
 
   Widget _memberCard(
     String membershipId,
+    String orgName,
     Map<String, dynamic> userData,
     Map<String, dynamic> memberData,
+    String userId,
   ) {
     final name =
         '${userData['firstname'] ?? ''} ${userData['surname'] ?? ''}'.trim();
@@ -548,19 +567,19 @@ class _ManageUsersScreenState extends State<ManageUsersScreen>
                     _showEditMemberDialog(membershipId, userData);
                     break;
                   case 'promote':
-                    _promoteToAdmin(membershipId);
+                    _promoteToAdmin(membershipId, userId, orgName);
                     break;
                   case 'approve':
-                    _approveAdmin(membershipId);
+                    _approveAdmin(membershipId, userId, orgName);
                     break;
                   case 'reject':
-                    _rejectAdmin(membershipId);
+                    _rejectAdmin(membershipId, userId, orgName);
                     break;
                   case 'revoke':
-                    _revokeAdmin(membershipId);
+                    _revokeAdmin(membershipId, userId, orgName);
                     break;
                   case 'delete':
-                    _removeMember(membershipId);
+                    _removeMember(membershipId, userId, orgName);
                     break;
                 }
               },
@@ -1119,7 +1138,7 @@ class _ManageUsersScreenState extends State<ManageUsersScreen>
 
   // Admin actions
 
-  Future<void> _promoteToAdmin(String membershipId) async {
+  Future<void> _promoteToAdmin(String membershipId, String userId, String orgName) async {
     final confirm = await _confirmDialog('Promote to Admin',
         'This user will need approval before gaining admin access.');
 
@@ -1131,27 +1150,39 @@ class _ManageUsersScreenState extends State<ManageUsersScreen>
         .update({'role': 'admin', 'isApproved': false});
 
     if (mounted) _snack('User promoted - pending approval');
+
+    await NotificationService.notifyPromoted(
+        userId: userId, orgName: orgName);
   }
 
-  Future<void> _approveAdmin(String membershipId) async {
+  Future<void> _approveAdmin(String membershipId, String userId, String orgName) async {
     await _orgService.approveAdmin(membershipId);
     if (mounted) _snack('Admin approved', color: _greenDark);
+
+    await NotificationService.notifyAdminApproved(
+        userId: userId, orgName: orgName);
   }
 
-  Future<void> _rejectAdmin(String membershipId) async {
+  Future<void> _rejectAdmin(String membershipId, String userId, String orgName) async {
     await _firestore
         .collection('organization_members')
         .doc(membershipId)
         .update({'role': 'user', 'isApproved': false});
     if (mounted) _snack('Admin request rejected');
+
+    await NotificationService.notifyDemoted(
+        userId: userId, orgName: orgName);
   }
 
-  Future<void> _revokeAdmin(String membershipId) async {
+  Future<void> _revokeAdmin(String membershipId, String userId, String orgName) async {
     await _orgService.revokeAdmin(membershipId);
     if (mounted) _snack('Admin privileges revoked');
+
+    await NotificationService.notifyDemoted(
+        userId: userId, orgName: orgName);
   }
 
-  Future<void> _removeMember(String membershipId) async {
+  Future<void> _removeMember(String membershipId, String userId, String orgName) async {
     final confirm = await _confirmDialog(
         'Remove Member', 'Remove this member from the organization?');
 
@@ -1161,6 +1192,9 @@ class _ManageUsersScreenState extends State<ManageUsersScreen>
         .doc(membershipId)
         .delete();
     if (mounted) _snack('Member removed', color: Colors.red.shade700);
+
+    await NotificationService.notifyRemoved(
+        userId: userId, orgName: orgName);
   }
 
   Future<bool?> _confirmDialog(String title, String body) {

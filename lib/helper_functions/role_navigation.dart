@@ -1,7 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:regie_data/screens/admin_dashboard.dart';
-import 'package:regie_data/screens/landing_page.dart';
+import 'package:regie_data/screens/main_shell.dart';
 import 'package:regie_data/screens/pending_admin_screen.dart';
 import 'package:regie_data/screens/user_home_screen.dart';
 import 'package:regie_data/services/organization_service.dart';
@@ -12,11 +12,11 @@ Future<void> navigateBasedOnRole(BuildContext context) async {
 
   if (!context.mounted) return;
 
-  // Always go to org selector after signing in
+  // Wrapped with main shell to maintain bottom nav state
   Navigator.pushReplacement(
     context,
     MaterialPageRoute(
-      builder: (context) => const LandingPage(),
+      builder: (context) => const MainShell(initialIndex: 0),
     ),
   );
 }
@@ -43,13 +43,34 @@ Future<void> navigateToOrgScreen(
 
   // Navigate based on role and approval status in this organization
   if (membership.role == 'admin' && membership.isApproved) {
-    Navigator.pushReplacement(context,
-        MaterialPageRoute(builder: (context) => const AdminDashboard()));
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const MainShell(
+          initialIndex: 0,
+          homeWidget: AdminDashboard(),
+        ),
+      ),
+    );
   } else if (membership.role == 'admin' && !membership.isApproved) {
-    Navigator.pushReplacement(context,
-        MaterialPageRoute(builder: (context) => const PendingAdminScreen()));
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const MainShell(
+          initialIndex: 0,
+          homeWidget: PendingAdminScreen(),
+        ),
+      ),
+    );
   } else {
-    Navigator.pushReplacement(context,
-        MaterialPageRoute(builder: (context) => const UserHomeScreen()));
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const MainShell(
+          initialIndex: 0,
+          homeWidget: UserHomeScreen(),
+        ),
+      ),
+    );
   }
 }

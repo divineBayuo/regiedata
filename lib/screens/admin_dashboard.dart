@@ -11,9 +11,11 @@ import 'package:qr_flutter/qr_flutter.dart';
 import 'package:regie_data/helper_functions/organization_context.dart';
 import 'package:regie_data/models/organization_model.dart';
 import 'package:regie_data/screens/all_attendance_screen.dart';
+import 'package:regie_data/screens/main_shell.dart';
 import 'package:regie_data/screens/manage_users_screen.dart';
 import 'package:regie_data/screens/organization_selector_screen.dart';
 import 'package:regie_data/screens/signinpage.dart';
+import 'package:regie_data/services/notification_service.dart';
 import 'package:regie_data/services/organization_service.dart';
 import 'package:share_plus/share_plus.dart';
 
@@ -235,7 +237,10 @@ class _AdminDashboardState extends State<AdminDashboard>
     Navigator.pushReplacement(
       context,
       MaterialPageRoute(
-        builder: (context) => const OrganizationSelectorScreen(),
+        builder: (context) => const MainShell(
+          initialIndex: 0,
+          homeWidget: OrganizationSelectorScreen(),
+        ),
       ),
     );
   }
@@ -266,7 +271,10 @@ class _AdminDashboardState extends State<AdminDashboard>
                 Navigator.pushReplacement(
                     context,
                     MaterialPageRoute(
-                        builder: (_) => const OrganizationSelectorScreen()));
+                        builder: (_) => const MainShell(
+                              initialIndex: 0,
+                              homeWidget: OrganizationSelectorScreen(),
+                            )));
               } catch (e) {
                 if (!mounted) return;
                 _snack('Failed to delete: $e', error: true);
@@ -566,8 +574,13 @@ class _AdminDashboardState extends State<AdminDashboard>
             'See all attendance records',
             Icons.list_alt_rounded,
             const Color(0xFFA855F7),
-            () => Navigator.push(context,
-                MaterialPageRoute(builder: (_) => const AllAttendanceScreen())),
+            () => Navigator.push(
+                context,
+                MaterialPageRoute(
+                    builder: (_) => const MainShell(
+                          initialIndex: 0,
+                          homeWidget: AllAttendanceScreen(),
+                        ))),
           ),
           const SizedBox(height: 10),
           _actionBtn(
@@ -575,8 +588,13 @@ class _AdminDashboardState extends State<AdminDashboard>
             'View, edit & manage member accounts',
             Icons.manage_accounts_outlined,
             const Color(0xFF6366F1),
-            () => Navigator.push(context,
-                MaterialPageRoute(builder: (_) => const ManageUsersScreen())),
+            () => Navigator.push(
+                context,
+                MaterialPageRoute(
+                    builder: (_) => const MainShell(
+                          initialIndex: 0,
+                          homeWidget: ManageUsersScreen(),
+                        ))),
           ),
           const SizedBox(height: 10),
           _actionBtn(
@@ -1036,7 +1054,8 @@ class _AdminDashboardState extends State<AdminDashboard>
         duration: const Duration(milliseconds: 200),
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
         decoration: BoxDecoration(
-          color: isSelected ? Color(0xFF3B82F6) : Colors.white.withOpacity(0.05),
+          color:
+              isSelected ? Color(0xFF3B82F6) : Colors.white.withOpacity(0.05),
           borderRadius: BorderRadius.circular(20),
         ),
         child: Text(
@@ -1256,10 +1275,9 @@ class _AdminDashboardState extends State<AdminDashboard>
                   Text(
                     label,
                     style: TextStyle(
-                      fontSize: 8,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.white.withOpacity(0.35)
-                    ),
+                        fontSize: 8,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.white.withOpacity(0.35)),
                     textAlign: TextAlign.center,
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
@@ -1622,11 +1640,19 @@ class _AdminDashboardState extends State<AdminDashboard>
                                         sessionId = docRef.id;
                                         eventName = name;
                                       });
+                                      await NotificationService
+                                          .notifySessionStarted(
+                                        orgId: orgId,
+                                        orgName: _currentOrg?.name ?? '',
+                                        eventName: name,
+                                        createdByUid: FirebaseAuth
+                                            .instance.currentUser!.uid,
+                                      );
                                     }),
                               ] else ...[
                                 _dialogTextBtn('End Session', () async {
                                   await _firestore
-                                      .collection('attendance_session')
+                                      .collection('attendance_sessions')
                                       .doc(sessionId)
                                       .update({'active': false});
                                   if (!parentContext.mounted) return;
