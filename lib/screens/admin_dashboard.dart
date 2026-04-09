@@ -48,6 +48,7 @@ class _AdminDashboardState extends State<AdminDashboard>
 
   OrganizationModel? _currentOrg;
   bool _isAdmin = false;
+  bool _isLoadingStats = true;
 
   // Monthly analytics: map of YYYY-MM -> total amount
   Map<String, double> _monthlyMoney = {};
@@ -75,8 +76,13 @@ class _AdminDashboardState extends State<AdminDashboard>
   }
 
   Future<void> _loadStats() async {
+    setState(() => _isLoadingStats = true);
+
     String? orgId = await OrganizationContext.getCurrentOrganizationId();
-    if (orgId == null) return;
+    if (orgId == null) {
+      setState(() => _isLoadingStats = false);
+      return;
+    }
 
     final orgDoc =
         await _firestore.collection('organizations').doc(orgId).get();
@@ -99,6 +105,7 @@ class _AdminDashboardState extends State<AdminDashboard>
       setState(() {
         _currentOrg = org;
         _isAdmin = isAdmin;
+        _isLoadingStats = false;
       });
     }
 
@@ -390,285 +397,304 @@ class _AdminDashboardState extends State<AdminDashboard>
   }
 
   Widget _buildOverviewTab() {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(20),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Welcome banner
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(24),
-            decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                colors: [Color(0xFF0D2010), Color(0xFF0A1A0C)],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
+    return RefreshIndicator(
+      onRefresh: _loadStats,
+      color: _green,
+      backgroundColor: _surface,
+      child: SingleChildScrollView(
+        physics: AlwaysScrollableScrollPhysics(),
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Welcome banner
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
+                  colors: [Color(0xFF0D2010), Color(0xFF0A1A0C)],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                borderRadius: BorderRadius.circular(18),
+                border: Border.all(color: _green.withOpacity(0.15)),
+                boxShadow: [
+                  BoxShadow(color: _green.withOpacity(0.05), blurRadius: 30)
+                ],
               ),
-              borderRadius: BorderRadius.circular(18),
-              border: Border.all(color: _green.withOpacity(0.15)),
-              boxShadow: [
-                BoxShadow(color: _green.withOpacity(0.05), blurRadius: 30)
-              ],
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 10, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: _green.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(color: _green.withOpacity(0.2)),
+                          ),
+                          child: const Text(
+                            'ADMIN',
+                            style: TextStyle(
+                                color: _green,
+                                fontSize: 10,
+                                fontWeight: FontWeight.w800,
+                                letterSpacing: 1.5),
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        Text(
+                          _currentOrg?.name ?? 'Admin Dashboard',
+                          style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 20,
+                              fontWeight: FontWeight.w800,
+                              letterSpacing: -0.3),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          'Manage attendance, members & finances',
+                          style: TextStyle(
+                              color: Colors.white.withOpacity(0.4),
+                              fontSize: 13),
+                        )
+                      ],
+                    ),
+                  ),
+                  Container(
+                    padding: const EdgeInsets.all(14),
+                    decoration: BoxDecoration(
+                        color: _green.withOpacity(0.1), shape: BoxShape.circle),
+                    child: const Icon(Icons.admin_panel_settings_outlined,
+                        color: _green, size: 28),
+                  )
+                ],
+              ),
             ),
-            child: Row(
+            const SizedBox(height: 20),
+
+            // Stats Row 1
+            Row(
               children: [
                 Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                    child: _isLoadingStats
+                        ? const _StatCardSkeleton()
+                        : _statCard('Members', _totalOrgMembers.toString(),
+                            Icons.people_outline, const Color(0xFF3B82F6))),
+                const SizedBox(width: 12),
+                Expanded(
+                    child: _isLoadingStats
+                        ? const _StatCardSkeleton()
+                        : _statCard(
+                            'Attendance Records',
+                            _totalAttendance.toString(),
+                            Icons.numbers_rounded,
+                            const Color(0xFFEC4899)))
+              ],
+            ),
+            const SizedBox(height: 12),
+
+            // Stats row 2
+            Row(
+              children: [
+                Expanded(
+                    child: _isLoadingStats
+                        ? const _StatCardSkeleton()
+                        : _statCard('Today', _todayAttendance.toString(),
+                            Icons.today_outlined, const Color(0xFFF59E0B))),
+                const SizedBox(width: 12),
+                Expanded(
+                    child: _isLoadingStats
+                        ? const _StatCardSkeleton()
+                        : _statCard('Live Sessions', _activeSessions.toString(),
+                            Icons.wifi_tethering_rounded, _green)),
+              ],
+            ),
+
+            const SizedBox(height: 12),
+
+            // Money Stat
+            _isLoadingStats
+                ? const _MoneyCardSkeleton()
+                : Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(20),
+                    decoration: BoxDecoration(
+                      color: _surface,
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(color: Colors.white.withOpacity(0.06)),
+                    ),
+                    child: Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: Colors.teal.withOpacity(0.12),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: const Icon(
+                            Icons.account_balance_wallet_outlined,
+                            color: Color(0xFF2DD4BF),
+                            size: 24,
+                          ),
+                        ),
+                        const SizedBox(width: 16),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'GH₵ ${_totalMoneyCollected.toStringAsFixed(2)}',
+                              style: const TextStyle(
+                                  fontSize: 22,
+                                  fontWeight: FontWeight.w800,
+                                  color: Colors.white,
+                                  letterSpacing: -0.5),
+                            ),
+                            Text(
+                              'Total Money Collected',
+                              style: TextStyle(
+                                  fontSize: 12,
+                                  color: Colors.white.withOpacity(0.4)),
+                            ),
+                          ],
+                        )
+                      ],
+                    ),
+                  ),
+            const SizedBox(height: 28),
+
+            // Actions
+            Text(
+              'Quick Actions',
+              style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w700,
+                  color: Colors.white.withOpacity(0.85)),
+            ),
+            const SizedBox(height: 14),
+
+            _actionBtn(
+              'Create Live Session',
+              'Generate QR Code & PIN for attendance',
+              Icons.qr_code_rounded,
+              _green,
+              () => _showCreateSessionDialog(context),
+            ),
+            const SizedBox(height: 10),
+            _actionBtn(
+              'Active Sessions',
+              'View and manage currently active sessions',
+              Icons.wifi_tethering_rounded,
+              const Color(0xFF3B82F6),
+              () => _showActiveSessionsScreen(context),
+            ),
+            const SizedBox(height: 10),
+            _actionBtn(
+              'View All Attendance',
+              'See all attendance records',
+              Icons.list_alt_rounded,
+              const Color(0xFFA855F7),
+              () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                      builder: (_) => const MainShell(
+                            initialIndex: 0,
+                            homeWidget: AllAttendanceScreen(),
+                          ))),
+            ),
+            const SizedBox(height: 10),
+            _actionBtn(
+              'Manage Members',
+              'View, edit & manage member accounts',
+              Icons.manage_accounts_outlined,
+              const Color(0xFF6366F1),
+              () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                      builder: (_) => const MainShell(
+                            initialIndex: 0,
+                            homeWidget: ManageUsersScreen(),
+                          ))),
+            ),
+            const SizedBox(height: 10),
+            _actionBtn(
+              'Session History',
+              'View all past attendance sessions',
+              Icons.history,
+              const Color(0xFF2DD4BF),
+              () => _showSessionHistoryScreen(context),
+            ),
+
+            if (_isAdmin && _currentOrg != null) ...[
+              const SizedBox(height: 28),
+              Divider(color: Colors.white.withOpacity(0.06)),
+              const SizedBox(height: 16),
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(
+                    color: Colors.red.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(color: Colors.red.withOpacity(0.2))),
+                child: const Text('DANGER ZONE',
+                    style: TextStyle(
+                        fontSize: 10,
+                        fontWeight: FontWeight.w800,
+                        color: Colors.red,
+                        letterSpacing: 1.2)),
+              ),
+              const SizedBox(height: 12),
+              GestureDetector(
+                onTap: () => _confirmDelete(context, _currentOrg!.id),
+                child: Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Colors.red.withOpacity(0.05),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: Colors.red.withOpacity(0.2)),
+                  ),
+                  child: Row(
                     children: [
                       Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 10, vertical: 4),
+                        padding: const EdgeInsets.all(8),
                         decoration: BoxDecoration(
-                          color: _green.withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(20),
-                          border: Border.all(color: _green.withOpacity(0.2)),
-                        ),
-                        child: const Text(
-                          'ADMIN',
-                          style: TextStyle(
-                              color: _green,
-                              fontSize: 10,
-                              fontWeight: FontWeight.w800,
-                              letterSpacing: 1.5),
+                            color: Colors.red.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(8)),
+                        child: const Icon(Icons.delete_forever_rounded,
+                            color: Colors.red, size: 20),
+                      ),
+                      const SizedBox(width: 14),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text('Delete Organization',
+                                style: TextStyle(
+                                    color: Colors.red,
+                                    fontWeight: FontWeight.w700,
+                                    fontSize: 14)),
+                            Text(
+                                'Permanently remove this organization and all data',
+                                style: TextStyle(
+                                    color: Colors.red.withOpacity(0.5),
+                                    fontSize: 12)),
+                          ],
                         ),
                       ),
-                      const SizedBox(height: 12),
-                      Text(
-                        'Admin Dashboard',
-                        style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 20,
-                            fontWeight: FontWeight.w800,
-                            letterSpacing: -0.3),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        'Manage attendance, members & finances',
-                        style: TextStyle(
-                            color: Colors.white.withOpacity(0.4), fontSize: 13),
-                      )
+                      Icon(Icons.chevron_right_rounded,
+                          color: Colors.red.withOpacity(0.4), size: 20),
                     ],
                   ),
                 ),
-                Container(
-                  padding: const EdgeInsets.all(14),
-                  decoration: BoxDecoration(
-                      color: _green.withOpacity(0.1), shape: BoxShape.circle),
-                  child: const Icon(Icons.admin_panel_settings_outlined,
-                      color: _green, size: 28),
-                )
-              ],
-            ),
-          ),
-          const SizedBox(height: 20),
-
-          // Stats Row 1
-          Row(
-            children: [
-              Expanded(
-                  child: _statCard('Members', _totalOrgMembers.toString(),
-                      Icons.people_outline, const Color(0xFF3B82F6))),
-              const SizedBox(width: 12),
-              Expanded(
-                  child: _statCard(
-                      'Attendance Records',
-                      _totalAttendance.toString(),
-                      Icons.numbers_rounded,
-                      const Color(0xFFEC4899)))
-            ],
-          ),
-          const SizedBox(height: 12),
-
-          // Stats row 2
-          Row(
-            children: [
-              Expanded(
-                  child: _statCard('Today', _todayAttendance.toString(),
-                      Icons.today_outlined, const Color(0xFFF59E0B))),
-              const SizedBox(width: 12),
-              Expanded(
-                  child: _statCard('Live Sessions', _activeSessions.toString(),
-                      Icons.wifi_tethering_rounded, _green)),
-            ],
-          ),
-
-          const SizedBox(height: 12),
-
-          // Money Stat
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(
-              color: _surface,
-              borderRadius: BorderRadius.circular(14),
-              border: Border.all(color: Colors.white.withOpacity(0.06)),
-            ),
-            child: Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: Colors.teal.withOpacity(0.12),
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: const Icon(
-                    Icons.account_balance_wallet_outlined,
-                    color: Color(0xFF2DD4BF),
-                    size: 24,
-                  ),
-                ),
-                const SizedBox(width: 16),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'GH₵ ${_totalMoneyCollected.toStringAsFixed(2)}',
-                      style: const TextStyle(
-                          fontSize: 22,
-                          fontWeight: FontWeight.w800,
-                          color: Colors.white,
-                          letterSpacing: -0.5),
-                    ),
-                    Text(
-                      'Total Money Collected',
-                      style: TextStyle(
-                          fontSize: 12, color: Colors.white.withOpacity(0.4)),
-                    ),
-                  ],
-                )
-              ],
-            ),
-          ),
-          const SizedBox(height: 28),
-
-          // Actions
-          Text(
-            'Quick Actions',
-            style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w700,
-                color: Colors.white.withOpacity(0.85)),
-          ),
-          const SizedBox(height: 14),
-
-          _actionBtn(
-            'Create Live Session',
-            'Generate QR Code & PIN for attendance',
-            Icons.qr_code_rounded,
-            _green,
-            () => _showCreateSessionDialog(context),
-          ),
-          const SizedBox(height: 10),
-          _actionBtn(
-            'Active Sessions',
-            'View and manage currently active sessions',
-            Icons.wifi_tethering_rounded,
-            const Color(0xFF3B82F6),
-            () => _showActiveSessionsScreen(context),
-          ),
-          const SizedBox(height: 10),
-          _actionBtn(
-            'View All Attendance',
-            'See all attendance records',
-            Icons.list_alt_rounded,
-            const Color(0xFFA855F7),
-            () => Navigator.push(
-                context,
-                MaterialPageRoute(
-                    builder: (_) => const MainShell(
-                          initialIndex: 0,
-                          homeWidget: AllAttendanceScreen(),
-                        ))),
-          ),
-          const SizedBox(height: 10),
-          _actionBtn(
-            'Manage Members',
-            'View, edit & manage member accounts',
-            Icons.manage_accounts_outlined,
-            const Color(0xFF6366F1),
-            () => Navigator.push(
-                context,
-                MaterialPageRoute(
-                    builder: (_) => const MainShell(
-                          initialIndex: 0,
-                          homeWidget: ManageUsersScreen(),
-                        ))),
-          ),
-          const SizedBox(height: 10),
-          _actionBtn(
-            'Session History',
-            'View all past attendance sessions',
-            Icons.history,
-            const Color(0xFF2DD4BF),
-            () => _showSessionHistoryScreen(context),
-          ),
-
-          if (_isAdmin && _currentOrg != null) ...[
-            const SizedBox(height: 28),
-            Divider(color: Colors.white.withOpacity(0.06)),
-            const SizedBox(height: 16),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-              decoration: BoxDecoration(
-                  color: Colors.red.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: Colors.red.withOpacity(0.2))),
-              child: const Text('DANGER ZONE',
-                  style: TextStyle(
-                      fontSize: 10,
-                      fontWeight: FontWeight.w800,
-                      color: Colors.red,
-                      letterSpacing: 1.2)),
-            ),
-            const SizedBox(height: 12),
-            GestureDetector(
-              onTap: () => _confirmDelete(context, _currentOrg!.id),
-              child: Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: Colors.red.withOpacity(0.05),
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: Colors.red.withOpacity(0.2)),
-                ),
-                child: Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                          color: Colors.red.withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(8)),
-                      child: const Icon(Icons.delete_forever_rounded,
-                          color: Colors.red, size: 20),
-                    ),
-                    const SizedBox(width: 14),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Text('Delete Organization',
-                              style: TextStyle(
-                                  color: Colors.red,
-                                  fontWeight: FontWeight.w700,
-                                  fontSize: 14)),
-                          Text(
-                              'Permanently remove this organization and all data',
-                              style: TextStyle(
-                                  color: Colors.red.withOpacity(0.5),
-                                  fontSize: 12)),
-                        ],
-                      ),
-                    ),
-                    Icon(Icons.chevron_right_rounded,
-                        color: Colors.red.withOpacity(0.4), size: 20),
-                  ],
-                ),
               ),
-            ),
+            ],
+            const SizedBox(height: 20),
           ],
-          const SizedBox(height: 20),
-        ],
+        ),
       ),
     );
   }
@@ -1650,19 +1676,27 @@ class _AdminDashboardState extends State<AdminDashboard>
                                       );
                                     }),
                               ] else ...[
-                                _dialogTextBtn('End Session', () async {
-                                  await _firestore
-                                      .collection('attendance_sessions')
-                                      .doc(sessionId)
-                                      .update({'active': false});
-                                  if (!parentContext.mounted) return;
-                                  Navigator.pop(dialogContext);
-                                  _snack('Session closed');
-                                  if (mounted) {
-                                    setState(() {});
-                                    _loadStats();
-                                  }
-                                })
+                                Row(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    _dialogTextBtn(
+                                        'Back', () => Navigator.pop(context)),
+                                    _dialogTextBtn('End Session', () async {
+                                      await _firestore
+                                          .collection('attendance_sessions')
+                                          .doc(sessionId)
+                                          .update({'active': false});
+                                      if (!parentContext.mounted) return;
+                                      Navigator.pop(dialogContext);
+                                      _snack('Session closed');
+                                      if (mounted) {
+                                        setState(() {});
+                                        _loadStats();
+                                      }
+                                    }),
+                                  ],
+                                )
                               ]
                             ])
                       ],
@@ -2288,4 +2322,160 @@ class _AdminDashboardState extends State<AdminDashboard>
           ],
         ),
       );
+}
+
+class _StatCardSkeleton extends StatefulWidget {
+  const _StatCardSkeleton();
+
+  @override
+  State<_StatCardSkeleton> createState() => _StatCardSkeletonState();
+}
+
+class _StatCardSkeletonState extends State<_StatCardSkeleton>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _ctrl;
+  late Animation<double> _anim;
+
+  @override
+  void initState() {
+    super.initState();
+    _ctrl = AnimationController(
+        vsync: this, duration: const Duration(milliseconds: 900))
+      ..repeat(reverse: true);
+    _anim = Tween<double>(begin: 0.4, end: 0.9)
+        .animate(CurvedAnimation(parent: _ctrl, curve: Curves.easeInOut));
+  }
+
+  @override
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _anim,
+      builder: (_, __) => Container(
+        padding: const EdgeInsets.all(18),
+        decoration: BoxDecoration(
+          color: const Color(0xFF111811),
+          borderRadius: BorderRadius.circular(14),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Icon
+            Container(
+              width: 34,
+              height: 34,
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.06 * _anim.value),
+                borderRadius: BorderRadius.circular(8),
+              ),
+            ),
+            const SizedBox(height: 14),
+
+            // Number
+            Container(
+              width: 56,
+              height: 22,
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.1 * _anim.value),
+                borderRadius: BorderRadius.circular(6),
+              ),
+            ),
+            const SizedBox(height: 6),
+            // Label
+            Container(
+              width: 80,
+              height: 10,
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.05 * _anim.value),
+                borderRadius: BorderRadius.circular(4),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _MoneyCardSkeleton extends StatefulWidget {
+  const _MoneyCardSkeleton();
+
+  @override
+  State<_MoneyCardSkeleton> createState() => __MoneyCardSkeletonState();
+}
+
+class __MoneyCardSkeletonState extends State<_MoneyCardSkeleton>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _ctrl;
+  late Animation<double> _anim;
+
+  @override
+  void initState() {
+    super.initState();
+    _ctrl = AnimationController(
+        vsync: this, duration: const Duration(milliseconds: 900))
+      ..repeat(reverse: true);
+    _anim = Tween<double>(begin: 0.4, end: 0.9)
+        .animate(CurvedAnimation(parent: _ctrl, curve: Curves.easeInOut));
+  }
+
+  @override
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+        animation: _anim,
+        builder: (_, __) => Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: const Color(0xFF111811),
+                borderRadius: BorderRadius.circular(14),
+              ),
+              child: Row(
+                children: [
+                  Container(
+                    width: 48,
+                    height: 48,
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.06 * _anim.value),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Container(
+                        width: 120,
+                        height: 20,
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.1 * _anim.value),
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Container(
+                        width: 90,
+                        height: 10,
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.05 * _anim.value),
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                      )
+                    ],
+                  )
+                ],
+              ),
+            ));
+  }
 }

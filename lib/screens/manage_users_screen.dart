@@ -326,11 +326,12 @@ class _ManageUsersScreenState extends State<ManageUsersScreen>
         return FutureBuilder<DocumentSnapshot>(
             future: _firestore.collection('organizations').doc(orgId).get(),
             builder: (context, orgDocSnapshot) {
-              final orgName = orgDocSnapshot.hasData && orgDocSnapshot.data!.exists
-                  ? (orgDocSnapshot.data!.data() as Map<String, dynamic>)['name']
-                          as String? ??
-                      ''
-                  : '';
+              final orgName =
+                  (orgDocSnapshot.hasData && orgDocSnapshot.data!.exists)
+                      ? (orgDocSnapshot.data!.data()
+                              as Map<String, dynamic>)['name'] as String? ??
+                          'your organization'
+                      : 'your organization';
 
               return StreamBuilder<QuerySnapshot>(
                 stream: _getMemberStream(orgId, filter),
@@ -1138,7 +1139,8 @@ class _ManageUsersScreenState extends State<ManageUsersScreen>
 
   // Admin actions
 
-  Future<void> _promoteToAdmin(String membershipId, String userId, String orgName) async {
+  Future<void> _promoteToAdmin(
+      String membershipId, String userId, String orgName) async {
     final confirm = await _confirmDialog('Promote to Admin',
         'This user will need approval before gaining admin access.');
 
@@ -1151,38 +1153,60 @@ class _ManageUsersScreenState extends State<ManageUsersScreen>
 
     if (mounted) _snack('User promoted - pending approval');
 
-    await NotificationService.notifyPromoted(
-        userId: userId, orgName: orgName);
+    await NotificationService.notifyPromoted(userId: userId, orgName: orgName);
   }
 
-  Future<void> _approveAdmin(String membershipId, String userId, String orgName) async {
+  Future<void> _approveAdmin(
+      String membershipId, String userId, String orgName) async {
     await _orgService.approveAdmin(membershipId);
     if (mounted) _snack('Admin approved', color: _greenDark);
 
-    await NotificationService.notifyAdminApproved(
-        userId: userId, orgName: orgName);
+    try {
+      await NotificationService.notifyAdminApproved(
+          userId: userId, orgName: orgName);
+    } catch (e) {
+      debugPrint('Notification failed: $e');
+      if (mounted) {
+        _snack('Warning: notification not sent ($e)', color: Colors.orange);
+      }
+    }
   }
 
-  Future<void> _rejectAdmin(String membershipId, String userId, String orgName) async {
+  Future<void> _rejectAdmin(
+      String membershipId, String userId, String orgName) async {
     await _firestore
         .collection('organization_members')
         .doc(membershipId)
         .update({'role': 'user', 'isApproved': false});
     if (mounted) _snack('Admin request rejected');
 
-    await NotificationService.notifyDemoted(
-        userId: userId, orgName: orgName);
+    try {
+      await NotificationService.notifyDemoted(userId: userId, orgName: orgName);
+    } catch (e) {
+      debugPrint('Notification failed: $e');
+      if (mounted) {
+        _snack('Warning: notification not sent ($e)', color: Colors.orange);
+      }
+    }
   }
 
-  Future<void> _revokeAdmin(String membershipId, String userId, String orgName) async {
+  Future<void> _revokeAdmin(
+      String membershipId, String userId, String orgName) async {
     await _orgService.revokeAdmin(membershipId);
     if (mounted) _snack('Admin privileges revoked');
 
-    await NotificationService.notifyDemoted(
-        userId: userId, orgName: orgName);
+    try {
+      await NotificationService.notifyDemoted(userId: userId, orgName: orgName);
+    } catch (e) {
+      debugPrint('Notification failed: $e');
+      if (mounted) {
+        _snack('Warning: notification not sent ($e)', color: Colors.orange);
+      }
+    }
   }
 
-  Future<void> _removeMember(String membershipId, String userId, String orgName) async {
+  Future<void> _removeMember(
+      String membershipId, String userId, String orgName) async {
     final confirm = await _confirmDialog(
         'Remove Member', 'Remove this member from the organization?');
 
@@ -1193,8 +1217,14 @@ class _ManageUsersScreenState extends State<ManageUsersScreen>
         .delete();
     if (mounted) _snack('Member removed', color: Colors.red.shade700);
 
-    await NotificationService.notifyRemoved(
-        userId: userId, orgName: orgName);
+    try {
+      await NotificationService.notifyRemoved(userId: userId, orgName: orgName);
+    } catch (e) {
+      debugPrint('Notification failed: $e');
+      if (mounted) {
+        _snack('Warning: notification not sent ($e)', color: Colors.orange);
+      }
+    }
   }
 
   Future<bool?> _confirmDialog(String title, String body) {
