@@ -33,6 +33,8 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
   int _attendanceCount = 0;
   int _thisMonthCount = 0;
 
+  bool _isLoadingData = true;
+
   @override
   void initState() {
     super.initState();
@@ -40,8 +42,13 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
   }
 
   Future<void> _loadUserData() async {
+    setState(() => _isLoadingData = true);
+
     final user = _auth.currentUser;
-    if (user == null) return;
+    if (user == null) {
+      setState(() => _isLoadingData = false);
+      return;
+    }
 
     final userDoc = await _firestore.collection('users').doc(user.uid).get();
     if (!userDoc.exists || !mounted) return;
@@ -70,6 +77,7 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
         _userEmail = userData['email'];
         _attendanceCount = totalSnap.docs.length;
         _thisMonthCount = monthSnap.docs.length;
+        _isLoadingData = false;
       });
     }
   }
@@ -260,16 +268,20 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
               Row(
                 children: [
                   Expanded(
-                    child: _statCard(
-                        'Total Attendance',
-                        _attendanceCount.toString(),
-                        Icons.check_circle_outline_rounded,
-                        Color(0xFF3B82F6)),
+                    child: _isLoadingData
+                        ? _StatCardSkeleton()
+                        : _statCard(
+                            'Total Attendance',
+                            _attendanceCount.toString(),
+                            Icons.check_circle_outline_rounded,
+                            Color(0xFF3B82F6)),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
-                    child: _statCard('This Month', _thisMonthCount.toString(),
-                        Icons.calendar_month_outlined, Color(0xFFF59E0B)),
+                    child: _isLoadingData
+                        ? _StatCardSkeleton()
+                        : _statCard('This Month', _thisMonthCount.toString(),
+                            Icons.calendar_month_outlined, Color(0xFFF59E0B)),
                   ),
                 ],
               ),
@@ -601,6 +613,84 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
           },
         );
       },
+    );
+  }
+}
+
+class _StatCardSkeleton extends StatefulWidget {
+  const _StatCardSkeleton();
+
+  @override
+  State<_StatCardSkeleton> createState() => _StatCardSkeletonState();
+}
+
+class _StatCardSkeletonState extends State<_StatCardSkeleton>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _ctrl;
+  late Animation<double> _anim;
+
+  @override
+  void initState() {
+    super.initState();
+    _ctrl = AnimationController(
+        vsync: this, duration: const Duration(milliseconds: 900))
+      ..repeat(reverse: true);
+    _anim = Tween<double>(begin: 0.4, end: 0.9)
+        .animate(CurvedAnimation(parent: _ctrl, curve: Curves.easeInOut));
+  }
+
+  @override
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _anim,
+      builder: (_, __) => Container(
+        padding: const EdgeInsets.all(18),
+        decoration: BoxDecoration(
+          color: const Color(0xFF111811),
+          borderRadius: BorderRadius.circular(14),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Icon
+            Container(
+              width: 34,
+              height: 34,
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.06 * _anim.value),
+                borderRadius: BorderRadius.circular(8),
+              ),
+            ),
+            const SizedBox(height: 14),
+
+            // Number
+            Container(
+              width: 56,
+              height: 22,
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.1 * _anim.value),
+                borderRadius: BorderRadius.circular(6),
+              ),
+            ),
+            const SizedBox(height: 6),
+            // Label
+            Container(
+              width: 80,
+              height: 10,
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.05 * _anim.value),
+                borderRadius: BorderRadius.circular(4),
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
