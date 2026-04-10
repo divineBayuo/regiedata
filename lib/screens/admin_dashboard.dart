@@ -11,7 +11,7 @@ import 'package:qr_flutter/qr_flutter.dart';
 import 'package:regie_data/helper_functions/organization_context.dart';
 import 'package:regie_data/models/organization_model.dart';
 import 'package:regie_data/screens/all_attendance_screen.dart';
-import 'package:regie_data/screens/main_shell.dart';
+import 'package:regie_data/widgets/main_shell.dart';
 import 'package:regie_data/screens/manage_users_screen.dart';
 import 'package:regie_data/screens/organization_selector_screen.dart';
 import 'package:regie_data/screens/signinpage.dart';

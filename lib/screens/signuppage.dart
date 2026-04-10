@@ -7,8 +7,8 @@ import 'package:google_sign_in/google_sign_in.dart';
 import 'package:regie_data/helper_functions/role_navigation.dart';
 import 'package:regie_data/screens/google_profile_completion_screen.dart';
 import 'package:regie_data/screens/landing_page.dart';
-import 'package:regie_data/screens/main_shell.dart';
 import 'package:regie_data/screens/signinpage.dart';
+import 'package:regie_data/widgets/main_shell.dart';
 
 // Theme tokens
 const _bg = Color(0xFF0A0F0A);
