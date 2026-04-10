@@ -51,6 +51,7 @@ dependencies:
   flutter_dotenv: ^6.0.0
   logger: ^2.6.2
   paystack_for_flutter: ^1.0.4
+  webview_flutter: ^4.13.1
 
 dev_dependencies:
   flutter_test:

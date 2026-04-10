@@ -86,8 +86,11 @@ class _AdminDashboardState extends State<AdminDashboard>
 
     final orgDoc =
         await _firestore.collection('organizations').doc(orgId).get();
+    OrganizationModel? org;
+    bool isAdmin = false;
+
     if (orgDoc.exists) {
-      final org = OrganizationModel.fromMap(orgDoc.data()!, orgDoc.id);
+      org = OrganizationModel.fromMap(orgDoc.data()!, orgDoc.id);
 
       final memberDoc = await _firestore
           .collection('organization_members')
@@ -96,17 +99,10 @@ class _AdminDashboardState extends State<AdminDashboard>
           .limit(1)
           .get();
 
-      bool isAdmin = false;
       if (memberDoc.docs.isNotEmpty) {
         final memberData = memberDoc.docs.first.data();
         isAdmin = memberData['role'] == 'admin';
       }
-
-      setState(() {
-        _currentOrg = org;
-        _isAdmin = isAdmin;
-        _isLoadingStats = false;
-      });
     }
 
     // Get organization members count
@@ -209,7 +205,10 @@ class _AdminDashboardState extends State<AdminDashboard>
         (a, b) => a.key.compareTo(b.key),
       ));
 
+    if (!mounted) return;
     setState(() {
+      _currentOrg = org;
+      _isAdmin = isAdmin;
       _totalAttendance = attendanceSnapshot.docs.length;
       _todayAttendance = todaySnapshot.docs.length;
       _activeSessions = activeSessionsSnapshot.docs.length;
@@ -219,6 +218,7 @@ class _AdminDashboardState extends State<AdminDashboard>
       _monthlyAttendance = sortedMonthlyAtt;
       _weeklyAttendance = sortedWeeklyAtt;
       _yearlyAttendance = sortedYearlyAtt;
+      _isLoadingStats = false;
     });
   }
 
