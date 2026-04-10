@@ -5,7 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:logger/logger.dart';
 import 'package:regie_data/helper_functions/role_navigation.dart';
 import 'package:regie_data/screens/landing_page.dart';
-import 'package:regie_data/screens/main_shell.dart';
+import 'package:regie_data/widgets/main_shell.dart';
 
 // Theme tokens
 const _bg = Color(0xFF0A0F0A);

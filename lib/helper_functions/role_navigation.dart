@@ -1,7 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:regie_data/screens/admin_dashboard.dart';
-import 'package:regie_data/screens/main_shell.dart';
+import 'package:regie_data/widgets/main_shell.dart';
 import 'package:regie_data/screens/pending_admin_screen.dart';
 import 'package:regie_data/screens/user_home_screen.dart';
 import 'package:regie_data/services/organization_service.dart';

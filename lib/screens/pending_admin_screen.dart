@@ -1,7 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:regie_data/screens/Signinpage.dart';
-import 'package:regie_data/screens/main_shell.dart';
+import 'package:regie_data/widgets/main_shell.dart';
 import 'package:regie_data/screens/user_home_screen.dart';
 
 const _bg = Color(0xFF0A0F0A);

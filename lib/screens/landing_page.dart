@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:regie_data/screens/main_shell.dart';
+import 'package:regie_data/widgets/main_shell.dart';
 import 'package:regie_data/screens/organization_selector_screen.dart';
 
 class LandingPage extends StatefulWidget {

@@ -6,11 +6,11 @@ import 'package:flutter/material.dart';
 import 'package:regie_data/helper_functions/organization_context.dart';
 import 'package:regie_data/screens/attendance_history_screen.dart';
 import 'package:regie_data/screens/code_entry_screen.dart';
-import 'package:regie_data/screens/main_shell.dart';
 import 'package:regie_data/screens/organization_selector_screen.dart';
 import 'package:regie_data/screens/qr_scanner_screen.dart';
 import 'package:regie_data/screens/signinpage.dart';
 import 'package:regie_data/screens/user_profile_screen.dart';
+import 'package:regie_data/widgets/main_shell.dart';
 
 const _bg = Color(0xFF0A0F0A);
 const _surface = Color(0xFF111811);
