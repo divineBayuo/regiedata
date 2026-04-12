@@ -4,7 +4,10 @@ import 'package:flutter/material.dart';
 import 'package:logger/logger.dart';
 import 'package:regie_data/helper_functions/role_navigation.dart';
 import 'package:regie_data/models/organization_model.dart';
+import 'package:regie_data/models/plan_limits.dart';
+import 'package:regie_data/screens/subscription_screen.dart';
 import 'package:regie_data/services/organization_service.dart';
+import 'package:regie_data/services/subscription_service.dart';
 
 // Theme tokens
 const _bg = Color(0xFF0A0F0A);
@@ -444,6 +447,72 @@ class _OrganizationSelectorScreenState extends State<OrganizationSelectorScreen>
                 }
 
                 setDialogState(() => isCreating = true);
+
+                // --Plan cap check
+                final plan = await SubscriptionService.getUserPlan(user.uid);
+                final maxOrgs = PlanLimits.maxOrganizations(plan);
+                if (_organizations.length >= maxOrgs) {
+                  setDialogState(() => isCreating = false);
+                  if (!context.mounted) return;
+                  showDialog(
+                    context: context,
+                    builder: (_) => Dialog(
+                      backgroundColor: const Color(0xFF111811),
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16)),
+                      child: Padding(
+                        padding: const EdgeInsets.all(24),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(Icons.lock_outline_rounded,
+                                color: Color(0xFF22C55E), size: 36),
+                            const SizedBox(height: 16),
+                            Text(
+                              plan == 'free'
+                                  ? 'Free plan allows 1 organization.'
+                                  : 'Pro plan allows up to $maxOrgs organizations.',
+                              style: const TextStyle(
+                                  color: Colors.white, fontSize: 14),
+                              textAlign: TextAlign.center,
+                            ),
+                            const SizedBox(height: 20),
+                            GestureDetector(
+                              onTap: () {
+                                Navigator.pop(context);
+                                Navigator.pop(context);
+                                Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                        builder: (_) =>
+                                            const SubscriptionScreen()));
+                              },
+                              child: Container(
+                                width: double.infinity,
+                                height: 46,
+                                decoration: BoxDecoration(
+                                  gradient: const LinearGradient(colors: [
+                                    Color(0xFF22C55E),
+                                    Color(0xFF16A34A)
+                                  ]),
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                child: const Center(
+                                  child: Text('Upgrade Plan',
+                                      style: TextStyle(
+                                          color: Colors.white,
+                                          fontWeight: FontWeight.w700,
+                                          fontSize: 14)),
+                                ),
+                              ),
+                            )
+                          ],
+                        ),
+                      ),
+                    ),
+                  );
+                  return;
+                }
 
                 try {
                   Logger().e(

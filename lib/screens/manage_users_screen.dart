@@ -1,9 +1,14 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:regie_data/helper_functions/organization_context.dart';
+import 'package:regie_data/models/plan_limits.dart';
+import 'package:regie_data/screens/subscription_screen.dart';
 import 'package:regie_data/services/notification_service.dart';
 import 'package:regie_data/services/organization_service.dart';
+import 'package:regie_data/services/subscription_service.dart';
+import 'package:regie_data/widgets/main_shell.dart';
 
 const _bg = Color(0xFF0A0F0A);
 const _surface = Color(0xFF111811);
@@ -855,6 +860,49 @@ class _ManageUsersScreenState extends State<ManageUsersScreen>
                             final orgId = await OrganizationContext
                                 .getCurrentOrganizationId();
                             if (orgId == null) throw 'No organization';
+
+                            // Member cap check
+                            final uid =
+                                FirebaseAuth.instance.currentUser?.uid ?? '';
+                            final plan =
+                                await SubscriptionService.getUserPlan(uid);
+                            final maxMembers = PlanLimits.maxMembers(plan);
+
+                            final currentCount = await _firestore
+                                .collection('organization_members')
+                                .where('organizationId', isEqualTo: orgId)
+                                .count()
+                                .get();
+
+                            if ((currentCount.count ?? 0) >= maxMembers) {
+                              if (!context.mounted) return;
+                              Navigator.pop(context); // close add dialog
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text(
+                                    'Member limit reached ($maxMembers). Upgrade to add more.',
+                                  ),
+                                  backgroundColor: const Color(0xFFF59E0B),
+                                  behavior: SnackBarBehavior.floating,
+                                  shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(10)),
+                                  action: SnackBarAction(
+                                    label: 'Upgrade',
+                                    onPressed: () => Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (_) => const MainShell(
+                                            initialIndex: 3,
+                                            homeWidget: SubscriptionScreen()),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              );
+                              return;
+                            }
+
+                            // userDoc add() call
                             final userDoc =
                                 await _firestore.collection('users').add({
                               'firstname': firstnameController.text.trim(),
