@@ -2,7 +2,11 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:regie_data/models/plan_limits.dart';
+import 'package:regie_data/screens/subscription_screen.dart';
+import 'package:regie_data/services/subscription_service.dart';
 
+// theme colors
 const _bg = Color(0xFF0A0F0A);
 const _surface = Color(0xFF111811);
 const _green = Color(0xFF22C55E);
@@ -38,10 +42,13 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
   bool _isWorking = false;
   bool _isSchooling = false;
 
+  String _currentPlan = 'free';
+
   @override
   void initState() {
     super.initState();
     _loadProfile();
+    _loadPlan();
   }
 
   Future<void> _loadProfile() async {
@@ -139,16 +146,18 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
         'department': _departmentController.text.trim().isEmpty
             ? null
             : _departmentController.text.trim(),
-        'placeOfWork': _isWorking && _placeOfWorkController.text.trim().isEmpty
-            ? _placeOfWorkController.text.trim()
-            : null,
+        'placeOfWork':
+            _isWorking && _placeOfWorkController.text.trim().isNotEmpty
+                ? _placeOfWorkController.text.trim()
+                : null,
         'placeOfSchool':
-            _isSchooling && _placeOfSchoolController.text.trim().isEmpty
+            _isSchooling && _placeOfSchoolController.text.trim().isNotEmpty
                 ? _placeOfSchoolController.text.trim()
                 : null,
-        'courseOfStudy': _isSchooling && _courseController.text.trim().isEmpty
-            ? _courseController.text.trim()
-            : null,
+        'courseOfStudy':
+            _isSchooling && _courseController.text.trim().isNotEmpty
+                ? _courseController.text.trim()
+                : null,
         'isWorking': _isWorking,
         'isSchooling': _isSchooling,
       });
@@ -175,6 +184,13 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
       behavior: SnackBarBehavior.floating,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
     ));
+  }
+
+  Future<void> _loadPlan() async {
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+    if (uid == null) return;
+    final plan = await SubscriptionService.getUserPlan(uid);
+    if (mounted) setState(() => _currentPlan = plan);
   }
 
   @override
@@ -273,7 +289,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                       child: CircularProgressIndicator(
                           color: _green, strokeWidth: 2.5),
                     ),
-                  )
+                  ),
               ],
             ),
     );
@@ -421,8 +437,76 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
             _infoRow('Department', data['department']),
           ]),
 
+          const SizedBox(height: 12),
+
+          // Subscription card
+          GestureDetector(
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const SubscriptionScreen()),
+            ).then((_) => _loadPlan()),
+            child: Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: _surface,
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(color: _green.withOpacity(0.15)),
+              ),
+              child: Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: _green.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: const Icon(Icons.workspace_premium_rounded,
+                        color: _green, size: 20),
+                  ),
+                  const SizedBox(width: 14),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text('Subscription',
+                            style: TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.w600,
+                                fontSize: 14)),
+                        Text(
+                          'Current plan: ${PlanLimits.planName(_currentPlan)}',
+                          style: TextStyle(
+                              color: Colors.white.withOpacity(0.35),
+                              fontSize: 12),
+                        )
+                      ],
+                    ),
+                  ),
+                  Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: _green.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(color: _green.withOpacity(0.2)),
+                    ),
+                    child: Text(PlanLimits.planName(_currentPlan),
+                        style: const TextStyle(
+                            color: _green,
+                            fontSize: 11,
+                            fontWeight: FontWeight.w700)),
+                  ),
+                  const SizedBox(width: 8),
+                  Icon(Icons.chevron_right_rounded,
+                      color: Colors.white.withOpacity(0.2), size: 18),
+                ],
+              ),
+            ),
+          ),
+
           const SizedBox(height: 28),
 
+          // Edit profile buttons
           GestureDetector(
             onTap: () => setState(() => _isEditing = true),
             child: Container(
