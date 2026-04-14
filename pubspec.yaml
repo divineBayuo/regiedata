@@ -52,6 +52,8 @@ dependencies:
   logger: ^2.6.2
   paystack_for_flutter: ^1.0.4
   webview_flutter: ^4.13.1
+  webview_flutter_android: ^4.11.0
+  webview_flutter_wkwebview: ^3.24.3
 
 dev_dependencies:
   flutter_test:

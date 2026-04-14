@@ -71,7 +71,7 @@ class _LandingPageState extends State<LandingPage>
       context,
       PageRouteBuilder(
         pageBuilder: (_, __, ___) => const MainShell(
-          initialIndex: 2,
+          initialIndex: 1,
           homeWidget: OrganizationSelectorScreen(),
         ),
         transitionsBuilder: (_, anim, __, child) =>

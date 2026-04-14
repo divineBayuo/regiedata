@@ -1,9 +1,13 @@
 import 'package:firebase_core/firebase_core.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:logger/logger.dart';
 import 'package:regie_data/firebase_options.dart';
 import 'package:regie_data/screens/splashscreen.dart';
+import 'package:webview_flutter/webview_flutter.dart';
+import 'package:webview_flutter_android/webview_flutter_android.dart';
+//import 'package:regie_data/services/subscription_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -15,6 +19,13 @@ void main() async {
   }
 
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+
+  //SubscriptionService.initWebView();
+
+  // only initialize webview on mobile
+  if (!kIsWeb) {
+    WebViewPlatform.instance = AndroidWebViewPlatform();
+  }
 
   runApp(const MyApp());
 }

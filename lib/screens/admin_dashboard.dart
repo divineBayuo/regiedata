@@ -10,6 +10,7 @@ import 'package:logger/logger.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:regie_data/helper_functions/organization_context.dart';
 import 'package:regie_data/models/organization_model.dart';
+import 'package:regie_data/screens/advanced_analytics_screen.dart';
 import 'package:regie_data/screens/all_attendance_screen.dart';
 import 'package:regie_data/widgets/main_shell.dart';
 import 'package:regie_data/screens/manage_users_screen.dart';
@@ -245,7 +246,7 @@ class _AdminDashboardState extends State<AdminDashboard>
       context,
       MaterialPageRoute(
         builder: (context) => const MainShell(
-          initialIndex: 0,
+          initialIndex: 1,
           homeWidget: OrganizationSelectorScreen(),
         ),
       ),
@@ -279,7 +280,7 @@ class _AdminDashboardState extends State<AdminDashboard>
                     context,
                     MaterialPageRoute(
                         builder: (_) => const MainShell(
-                              initialIndex: 0,
+                              initialIndex: 1,
                               homeWidget: OrganizationSelectorScreen(),
                             )));
               } catch (e) {
@@ -627,6 +628,17 @@ class _AdminDashboardState extends State<AdminDashboard>
               Icons.history,
               const Color(0xFF2DD4BF),
               () => _showSessionHistoryScreen(context),
+            ),
+            const SizedBox(height: 10),
+            _actionBtn(
+              'Advanced Analytics',
+              'Deep insights - attendance rates, streaks & more',
+              Icons.insights_rounded,
+              const Color(0xFF6366F1),
+              () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                      builder: (_) => const AdvancedAnalyticsScreen())),
             ),
 
             if (_isAdmin && _currentOrg != null) ...[

@@ -25,7 +25,9 @@
         "screenshot",
         "share_plus",
         "shared_preferences",
-        "webview_flutter"
+        "webview_flutter",
+        "webview_flutter_android",
+        "webview_flutter_wkwebview"
       ],
       "devDependencies": [
         "flutter_lints",
@@ -55,6 +57,25 @@
         "stream_channel",
         "test_api",
         "vector_math"
+      ]
+    },
+    {
+      "name": "webview_flutter_wkwebview",
+      "version": "3.24.3",
+      "dependencies": [
+        "flutter",
+        "meta",
+        "path",
+        "webview_flutter_platform_interface"
+      ]
+    },
+    {
+      "name": "webview_flutter_android",
+      "version": "4.11.0",
+      "dependencies": [
+        "flutter",
+        "meta",
+        "webview_flutter_platform_interface"
       ]
     },
     {
@@ -343,31 +364,12 @@
       ]
     },
     {
-      "name": "webview_flutter_wkwebview",
-      "version": "3.24.2",
-      "dependencies": [
-        "flutter",
-        "meta",
-        "path",
-        "webview_flutter_platform_interface"
-      ]
-    },
-    {
       "name": "webview_flutter_platform_interface",
       "version": "2.15.1",
       "dependencies": [
         "flutter",
         "meta",
         "plugin_platform_interface"
-      ]
-    },
-    {
-      "name": "webview_flutter_android",
-      "version": "4.10.15",
-      "dependencies": [
-        "flutter",
-        "meta",
-        "webview_flutter_platform_interface"
       ]
     },
     {
