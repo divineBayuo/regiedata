@@ -39,10 +39,20 @@ class MyApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       title: 'Regie Data',
       theme: ThemeData(
-        fontFamily: 'Quicksand',
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.green),
-        useMaterial3: true,
-      ),
+          fontFamily: 'Quicksand',
+          colorScheme: ColorScheme.fromSeed(seedColor: Colors.green),
+          useMaterial3: true,
+          appBarTheme: AppBarTheme(
+            backgroundColor: const Color(0xFF0A0F0A),
+            elevation: 0,
+            titleTextStyle: const TextStyle(
+              color: Colors.white,
+              fontWeight: FontWeight.w700,
+              fontSize: 16,
+              fontFamily: 'Quicksand',
+            ),
+            iconTheme: IconThemeData(color: Colors.white.withOpacity(0.7)),
+          )),
       home: const Splashscreen(),
     );
   }

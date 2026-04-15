@@ -12,6 +12,8 @@ import 'package:regie_data/helper_functions/organization_context.dart';
 import 'package:regie_data/models/organization_model.dart';
 import 'package:regie_data/screens/advanced_analytics_screen.dart';
 import 'package:regie_data/screens/all_attendance_screen.dart';
+import 'package:regie_data/screens/org_customization_screen.dart';
+import 'package:regie_data/screens/team_management_screen.dart';
 import 'package:regie_data/widgets/main_shell.dart';
 import 'package:regie_data/screens/manage_users_screen.dart';
 import 'package:regie_data/screens/organization_selector_screen.dart';
@@ -640,6 +642,28 @@ class _AdminDashboardState extends State<AdminDashboard>
                   MaterialPageRoute(
                       builder: (_) => const AdvancedAnalyticsScreen())),
             ),
+            const SizedBox(height: 10),
+            _actionBtn(
+              'Team Management',
+              'Roles, permissions & departments',
+              Icons.group_work_outlined,
+              const Color(0xFF2DD4BF),
+              () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                      builder: (_) => const TeamManagementScreen())),
+            ),
+            const SizedBox(height: 10),
+            _actionBtn(
+              'Organization Branding',
+              'Custom colors, logo & contact info',
+              Icons.palette_outlined,
+              const Color(0xFFF59E0B),
+              () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                      builder: (_) => const OrgCustomizationScreen())),
+            ),
 
             if (_isAdmin && _currentOrg != null) ...[
               const SizedBox(height: 28),
@@ -829,7 +853,7 @@ class _AdminDashboardState extends State<AdminDashboard>
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: const Icon(Icons.calendar_month_outlined,
-                        color: const Color(0xFF2DD4BF), size: 18),
+                        color: Color(0xFF2DD4BF), size: 18),
                   ),
                   title: Text('$monthName $year'),
                   trailing: Text(
@@ -1210,8 +1234,9 @@ class _AdminDashboardState extends State<AdminDashboard>
 
   String _getShortLabel(String key) {
     if (_attendancePeriod == 'week') return 'W${int.parse(key.split('-W')[1])}';
-    if (_attendancePeriod == 'month')
+    if (_attendancePeriod == 'month') {
       return _monthName(int.parse(key.split('-')[1])).substring(0, 3);
+    }
     return "'${key.substring(2)}";
   }
 
@@ -1451,9 +1476,10 @@ class _AdminDashboardState extends State<AdminDashboard>
                 children: [
                   Text(
                     title,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.w600,
+                      color: Colors.white.withOpacity(0.35),
                     ),
                   ),
                   Text(
