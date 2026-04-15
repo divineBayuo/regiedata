@@ -51,7 +51,7 @@ class _GoogleProfileCompletionScreenState
   bool _isWorking = false;
   bool _isSchooling = false;
   bool _isLoading = false;
-  String _selectedRole = 'user';
+  final String _selectedRole = 'user';
 
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
@@ -591,7 +591,7 @@ class _GoogleProfileCompletionScreenState
         _label('Gender', required: true),
         const SizedBox(height: 6),
         DropdownButtonFormField<String>(
-          value: _selectedGender,
+          initialValue: _selectedGender,
           dropdownColor: _surface,
           style: const TextStyle(color: Colors.white, fontSize: 14),
           iconEnabledColor: Colors.white.withOpacity(0.4),

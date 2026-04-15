@@ -791,7 +791,7 @@ class _SignuppageState extends State<Signuppage> {
         _label('Gender', required: true),
         const SizedBox(height: 6),
         DropdownButtonFormField<String>(
-          value: _selectedGender,
+          initialValue: _selectedGender,
           dropdownColor: _surface,
           style: const TextStyle(color: Colors.white, fontSize: 14),
           iconEnabledColor: Colors.white.withOpacity(0.4),

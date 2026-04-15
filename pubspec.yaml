@@ -47,13 +47,14 @@ dependencies:
   qr_flutter: ^4.1.0
   mobile_scanner: ^7.1.4
   screenshot: ^3.0.0
-  share_plus: ^12.0.1
+  share_plus: ^13.0.0
   flutter_dotenv: ^6.0.0
   logger: ^2.6.2
   paystack_for_flutter: ^1.0.4
   webview_flutter: ^4.13.1
   webview_flutter_android: ^4.11.0
   webview_flutter_wkwebview: ^3.24.3
+  path_provider: ^2.1.5
 
 dev_dependencies:
   flutter_test:
