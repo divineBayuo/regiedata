@@ -1,13 +1,13 @@
-import 'package:flutter/foundation.dart'; // for kIsWeb
+//import 'package:flutter/foundation.dart'; // for kIsWeb
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:path_provider/path_provider.dart';
-import 'package:regie_data/helper_functions/csv_download_web.dart';
+//import 'package:path_provider/path_provider.dart';
+import 'package:regie_data/helper_functions/csv_download.dart';
 import 'package:regie_data/helper_functions/organization_context.dart';
 import 'package:regie_data/screens/subscription_screen.dart';
 import 'package:regie_data/services/subscription_service.dart';
-import 'package:share_plus/share_plus.dart';
+//import 'package:share_plus/share_plus.dart';
 
 const _bg = Color(0xFF0A0F0A);
 const _surface = Color(0xFF111811);
@@ -306,7 +306,7 @@ class _AdvancedAnalyticsScreenState extends State<AdvancedAnalyticsScreen> {
         buffer.writeln('$name,$event,$dateStr,$timeStr,$method');
       }
 
-      if (kIsWeb) {
+      /* if (kIsWeb) {
         // trigger browser download on web
         downloadCsvWeb(buffer.toString(), 'regie_attendance.csv');
       } else {
@@ -322,7 +322,8 @@ class _AdvancedAnalyticsScreenState extends State<AdvancedAnalyticsScreen> {
         );
         // Share
         await SharePlus.instance.share(params);
-      }
+      } */
+      await downloadCsv(buffer.toString(), 'regie_attendance.csv');
     } catch (e) {
       if (!context.mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
