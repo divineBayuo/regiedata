@@ -8,6 +8,7 @@ import 'dart:math';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+// ignore: uri_does_not_exist
 import 'package:regie_data/services/paystack_webview_mobile.dart'
     if (dart.library.html) 'package:regie_data/services/paystack_webview_web.dart';
 
