@@ -1067,7 +1067,7 @@ class _LandingPageState extends State<LandingPage>
               children: [
                 _pricingCard(
                   plan: 'Free',
-                  price: '\$0',
+                  price: 'GHS 0',
                   period: 'forever',
                   desc: 'Perfect for getting started.',
                   features: [
@@ -1084,7 +1084,7 @@ class _LandingPageState extends State<LandingPage>
                 const SizedBox(width: 16),
                 _pricingCard(
                   plan: 'Pro',
-                  price: '\$4.99',
+                  price: 'GHS 50',
                   period: 'per month',
                   desc: 'For growing organizations.',
                   features: [
@@ -1103,7 +1103,7 @@ class _LandingPageState extends State<LandingPage>
                 const SizedBox(width: 16),
                 _pricingCard(
                   plan: 'Business',
-                  price: '\$9.99',
+                  price: 'GHS 100',
                   period: 'per month',
                   desc: 'For large institutions.',
                   features: [
