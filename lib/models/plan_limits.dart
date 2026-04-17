@@ -60,11 +60,11 @@ class PlanLimits {
   static String price(String plan) {
     switch (plan) {
       case 'pro':
-        return r'$4.99';
+        return r'GHS 50';
       case 'business':
-        return r'$9.99';
+        return r'GHS 100';
       default:
-        return r'$0';
+        return r'GHS 0';
     }
   }
 

@@ -1104,7 +1104,7 @@ class _PlanGateLocal extends StatelessWidget {
                       fontWeight: FontWeight.w800,
                       fontSize: 18)),
               const SizedBox(height: 8),
-              Text('"$feature" is a Pro feature. Starting at \$4.99/month.',
+              Text('"$feature" is a Pro feature. Starting at GHS 50/month.',
                   style: TextStyle(
                       color: Colors.white.withOpacity(0.5), fontSize: 14),
                   textAlign: TextAlign.center),

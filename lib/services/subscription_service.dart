@@ -8,19 +8,22 @@ import 'dart:math';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 // ignore: uri_does_not_exist
 import 'package:regie_data/services/paystack_webview_mobile.dart'
     if (dart.library.html) 'package:regie_data/services/paystack_webview_web.dart';
 
 // config
 // replace with dotenv.env
-const _paystackPublicKey = 'pk_live_YOUR_HERE';
+final _paystackPublicKey = dotenv.env['PAYSTACK_PUBLIC_KEY'] ??
+    (throw Exception(
+        'PAYSTACK_PUBLIC_KEY not found in .env')); // change form test to live
 
 // prices in GHS pesewas
 // Adjust to match dashboard
 const _planPrices = {
-  'pro': 499,
-  'business': 999,
+  'pro': 50,
+  'business': 100,
 };
 
 const _currency = 'GHS'; // or USD
