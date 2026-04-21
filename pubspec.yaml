@@ -1,5 +1,5 @@
 name: regie_data
-description: "A new Flutter project."
+description: "Regie — Smart attendance management for churches, schools and organizations."
 # The following line prevents the package from being accidentally published to
 # pub.dev using `flutter pub publish`. This is preferred for private packages.
 publish_to: 'none' # Remove this line if you wish to publish to pub.dev
@@ -50,7 +50,6 @@ dependencies:
   share_plus: ^13.0.0
   flutter_dotenv: ^6.0.0
   logger: ^2.6.2
-  paystack_for_flutter: ^1.0.4
   webview_flutter: ^4.13.1
   webview_flutter_android: ^4.11.0
   webview_flutter_wkwebview: ^3.24.3
@@ -105,7 +104,6 @@ flutter:
     - assets/onboarding_analysis.json
     - assets/icon/google_logo.png
     - assets/icon/regie_icon.png
-    - .env
   #   - images/a_dot_ham.jpeg
 
   # An image asset can refer to one or more resolution-specific "variants", see
