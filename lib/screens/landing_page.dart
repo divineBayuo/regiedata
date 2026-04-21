@@ -1351,7 +1351,7 @@ class _LandingPageState extends State<LandingPage>
           Row(
             children: [
               Text(
-                '© ${DateTime.now().year} Regie. All rights reserved.',
+                '© ${DateTime.now().year}\nRegie.\nAll rights reserved.',
                 style: TextStyle(
                   color: Colors.white.withOpacity(0.25),
                   fontSize: 13,
@@ -1359,7 +1359,7 @@ class _LandingPageState extends State<LandingPage>
               ),
               const Spacer(),
               Text(
-                'Made with ♥ in Ghana | BayuoTech',
+                'Made with ♥\nin Ghana|\nBayuoTech',
                 style: TextStyle(
                   color: Colors.white.withOpacity(0.25),
                   fontSize: 13,
