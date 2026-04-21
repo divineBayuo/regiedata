@@ -1,4 +1,4 @@
-package com.example.regie_data
+package com.bayuotech.regie_data
 
 import io.flutter.embedding.android.FlutterActivity
 
