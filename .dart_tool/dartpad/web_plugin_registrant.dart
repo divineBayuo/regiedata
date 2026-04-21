@@ -9,6 +9,7 @@
 import 'package:cloud_firestore_web/cloud_firestore_web.dart';
 import 'package:firebase_auth_web/firebase_auth_web.dart';
 import 'package:firebase_core_web/firebase_core_web.dart';
+import 'package:flutter_native_splash/flutter_native_splash_web.dart';
 import 'package:google_sign_in_web/google_sign_in_web.dart';
 import 'package:mobile_scanner/src/web/mobile_scanner_web.dart';
 import 'package:share_plus/src/share_plus_web.dart';
@@ -21,6 +22,7 @@ void registerPlugins([final Registrar? pluginRegistrar]) {
   FirebaseFirestoreWeb.registerWith(registrar);
   FirebaseAuthWeb.registerWith(registrar);
   FirebaseCoreWeb.registerWith(registrar);
+  FlutterNativeSplashWeb.registerWith(registrar);
   GoogleSignInPlugin.registerWith(registrar);
   MobileScannerWeb.registerWith(registrar);
   SharePlusWebPlugin.registerWith(registrar);
