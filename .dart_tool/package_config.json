@@ -185,7 +185,7 @@
       "name": "flutter",
       "rootUri": "file:///C:/Users/divin/dev/flutter/packages/flutter",
       "packageUri": "lib/",
-      "languageVersion": "3.9"
+      "languageVersion": "3.10"
     },
     {
       "name": "flutter_dotenv",
@@ -215,13 +215,13 @@
       "name": "flutter_test",
       "rootUri": "file:///C:/Users/divin/dev/flutter/packages/flutter_test",
       "packageUri": "lib/",
-      "languageVersion": "3.9"
+      "languageVersion": "3.10"
     },
     {
       "name": "flutter_web_plugins",
       "rootUri": "file:///C:/Users/divin/dev/flutter/packages/flutter_web_plugins",
       "packageUri": "lib/",
-      "languageVersion": "3.9"
+      "languageVersion": "3.10"
     },
     {
       "name": "glob",
@@ -345,7 +345,7 @@
     },
     {
       "name": "matcher",
-      "rootUri": "file:///C:/Users/divin/AppData/Local/Pub/Cache/hosted/pub.dev/matcher-0.12.18",
+      "rootUri": "file:///C:/Users/divin/AppData/Local/Pub/Cache/hosted/pub.dev/matcher-0.12.19",
       "packageUri": "lib/",
       "languageVersion": "3.7"
     },
@@ -357,7 +357,7 @@
     },
     {
       "name": "meta",
-      "rootUri": "file:///C:/Users/divin/AppData/Local/Pub/Cache/hosted/pub.dev/meta-1.17.0",
+      "rootUri": "file:///C:/Users/divin/AppData/Local/Pub/Cache/hosted/pub.dev/meta-1.18.0",
       "packageUri": "lib/",
       "languageVersion": "3.5"
     },
@@ -539,7 +539,7 @@
       "name": "sky_engine",
       "rootUri": "file:///C:/Users/divin/dev/flutter/bin/cache/pkg/sky_engine",
       "packageUri": "lib/",
-      "languageVersion": "3.9"
+      "languageVersion": "3.10"
     },
     {
       "name": "source_span",
@@ -573,7 +573,7 @@
     },
     {
       "name": "test_api",
-      "rootUri": "file:///C:/Users/divin/AppData/Local/Pub/Cache/hosted/pub.dev/test_api-0.7.9",
+      "rootUri": "file:///C:/Users/divin/AppData/Local/Pub/Cache/hosted/pub.dev/test_api-0.7.11",
       "packageUri": "lib/",
       "languageVersion": "3.7"
     },
@@ -693,8 +693,8 @@
     }
   ],
   "generator": "pub",
-  "generatorVersion": "3.11.1",
+  "generatorVersion": "3.12.0",
   "flutterRoot": "file:///C:/Users/divin/dev/flutter",
-  "flutterVersion": "3.41.3",
+  "flutterVersion": "3.44.0",
   "pubCache": "file:///C:/Users/divin/AppData/Local/Pub/Cache"
 }
