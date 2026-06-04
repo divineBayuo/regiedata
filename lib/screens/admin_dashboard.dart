@@ -312,6 +312,7 @@ class _AdminDashboardState extends State<AdminDashboard>
       appBar: AppBar(
         title: Row(
           children: [
+            const SizedBox(height: 20),
             Container(
               width: 30,
               height: 30,

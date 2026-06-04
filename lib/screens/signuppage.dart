@@ -370,6 +370,7 @@ class _SignuppageState extends State<Signuppage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
+                    const SizedBox(height: 20),
                     // Logo
                     Container(
                       width: 52,

@@ -18,7 +18,17 @@ void main() async {
     Logger().e('Error loading .env file: ', error: e);
   }
 
-  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  // await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+
+  // ✅ Check if already initialized before calling initializeApp
+  try {
+    await Firebase.initializeApp(
+      options: DefaultFirebaseOptions.currentPlatform,
+    );
+  } on FirebaseException catch (e) {
+    if (e.code != 'duplicate-app') rethrow;
+    // Already initialized — safe to continue
+  }
 
   //SubscriptionService.initWebView();
 

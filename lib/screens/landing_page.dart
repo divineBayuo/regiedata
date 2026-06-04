@@ -89,6 +89,7 @@ class _LandingPageState extends State<LandingPage>
         controller: _scrollController,
         child: Column(
           children: [
+            const SizedBox(height: 20),
             _buildNav(context),
             _buildHero(context),
             _buildProblem(context),

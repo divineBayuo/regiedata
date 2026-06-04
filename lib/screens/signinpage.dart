@@ -234,6 +234,7 @@ class _SigninpageState extends State<Signinpage>
                       crossAxisAlignment: CrossAxisAlignment.center,
                       mainAxisSize: MainAxisSize.min,
                       children: [
+                        const SizedBox(height: 20),
                         // Logo mark
                         Container(
                           width: 52,
